@@ -12,6 +12,7 @@ Pillow draws the sheets. On Windows, Gregmatics opens in its own window.
 | File | Holds |
 | --- | --- |
 | `%APPDATA%\Gregmatics` | The plans. Each one is a `.gregmatic` file. `settings.json` there remembers the folder and the open file. Not part of the repository. |
+| `../launcher/Gregmatics.csproj` | The program version is the `Version` property. Settings reads it. |
 | `layout.py` | Loads the open `.gregmatic` file, checks every record, and works out each zone's Y from its floor. |
 | `schema.py` | The record types. |
 | `catalog/` | GTNH 2.9.0 machine facts as JSON. Multiblocks are one file per tier in `catalog/multiblocks/`. Machines are one file per group in `catalog/machines/`, because a machine's voltage is set when you place it. `groups.json` names the groups. `elevator.json` is the elevator reach. |
@@ -38,7 +39,7 @@ A floor's Y only lives on the floor. Change its slab and everything on it moves 
 
 ## The editor
 
-On Windows, open `Gregmatics.exe` in the project folder, or run `py -3 desktop.py` here. The window reads the open `.gregmatic` file. Save writes that file and `editor/data.js`. Run `generate.py` to redraw the sheets into `out/`.
+On Windows, open `start.exe` in the project folder, or run `py -3 desktop.py` here. The released file is `Gregmatics.exe`, and it carries the program with it. The window reads the open `.gregmatic` file. Save writes that file and `editor/data.js`. Run `generate.py` to redraw the sheets into `out/`.
 
 The tools are in the [project README](../README.md).
 

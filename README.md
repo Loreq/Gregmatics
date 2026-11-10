@@ -4,7 +4,7 @@
 
 Create floorplans for [GregTech New Horizons](https://github.com/GTNewHorizons/GT-New-Horizons-Modpack) - [2.9.0](https://github.com/GTNewHorizons/GT-New-Horizons-Modpack/releases/tag/2.9.0)
 
-Download the latest build from the releases on this page.
+Download Gregmatics.exe and open it. That file is the whole program.
 
 ## Floors
 

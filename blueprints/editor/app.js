@@ -5,6 +5,8 @@
 
   const Core = window.Core;
   const BASE = window.BASE;
+  const appVersion = document.getElementById("app-version");
+  if (appVersion && BASE && BASE.app) appVersion.textContent = `Gregmatics v${BASE.app}`;
   const CATALOG = (BASE && BASE.catalog) || { multis: {}, singles: {}, groups: {} };
   const CRAWL = Core.CRAWL;
   const DRAFT_KEY = "gregmatics:draft";

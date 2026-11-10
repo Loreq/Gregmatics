@@ -1,6 +1,6 @@
 """Gregmatics window. No server.
 
-Start with Gregmatics.exe, or: py -3 desktop.py
+Start with start.exe in the project folder, or: py -3 desktop.py
 Loads editor/index.html. Reads and writes the open .gregmatic file.
 pywebview supplies the WebView2 libraries. This file does not call webview.start.
 """
@@ -29,7 +29,10 @@ clr.AddReference("System.Drawing")
 clr.AddReference(interop_dll_path("Microsoft.Web.WebView2.Core.dll"))
 clr.AddReference(interop_dll_path("Microsoft.Web.WebView2.WinForms.dll"))
 for platform in ("win-x64", "win-x86", "win-arm64"):
-    os.environ["Path"] += ";" + interop_dll_path(platform)
+    try:
+        os.environ["Path"] += ";" + interop_dll_path(platform)
+    except FileNotFoundError:
+        pass
 
 import System.Windows.Forms as WinForms
 from Microsoft.Web.WebView2.WinForms import CoreWebView2CreationProperties, WebView2

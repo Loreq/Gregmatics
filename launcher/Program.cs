@@ -1,7 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Gregmatics
@@ -18,6 +20,8 @@ namespace Gregmatics
         const uint GenericWrite = 0x40000000;
         const uint ShareReadWrite = 3;
         const uint OpenExisting = 3;
+
+        const string PackMagic = "GREGPACK";
 
         const string Bootstrap = @"
 import os, runpy, sys, traceback
@@ -119,24 +123,41 @@ except Exception:
         {
             string exePath = Process.GetCurrentProcess().MainModule.FileName;
             string exeDir = Path.GetDirectoryName(exePath);
+            string root = exeDir;
             string script = Path.Combine(exeDir, "blueprints", "desktop.py");
+            string bundledHome = null;
             if (!File.Exists(script))
             {
-                Report("Gregmatics.exe stays in the project folder, next to the blueprints folder.\r\nIt could not find " + script, test, log);
-                return 1;
+                root = Unpack(exePath, out string unpackError);
+                if (root == null)
+                {
+                    Report(unpackError, test, log);
+                    return 1;
+                }
+                script = Path.Combine(root, "blueprints", "desktop.py");
+                bundledHome = Path.Combine(root, "python");
             }
 
-            if (!FindPython(out string home, out string pythonExe, out string dll, out string error))
+            string home, pythonExe, dll, error;
+            bool found;
+            if (bundledHome != null)
+            {
+                home = bundledHome;
+                found = FindBundled(home, out pythonExe, out dll, out error);
+            }
+            else
+                found = FindPython(out home, out pythonExe, out dll, out error);
+            if (!found)
             {
                 Report(error, test, log);
                 return 1;
             }
 
-            if (!CanImport(pythonExe, "webview"))
+            if (!CanImport(pythonExe, "webview", out error))
             {
-                if (!PipInstall(pythonExe, "pywebview", out error))
+                if (bundledHome != null || !PipInstall(pythonExe, "pywebview", out error))
                 {
-                    Report("Could not install pywebview.\r\n" + error, test, log);
+                    Report("Could not load pywebview.\r\n" + error, test, log);
                     return 1;
                 }
             }
@@ -150,7 +171,7 @@ except Exception:
             Environment.SetEnvironmentVariable("PYTHONHOME", home);
             string path = Environment.GetEnvironmentVariable("PATH") ?? "";
             Environment.SetEnvironmentVariable("PATH", home + ";" + Path.Combine(home, "DLLs") + ";" + path);
-            Directory.SetCurrentDirectory(Path.Combine(exeDir, "blueprints"));
+            Directory.SetCurrentDirectory(Path.Combine(root, "blueprints"));
             TieStandardHandles();
             SetDllDirectory(home);
 
@@ -167,7 +188,7 @@ except Exception:
             RunFn run = Bind<RunFn>(module, "PyRun_SimpleString");
 
             IntPtr homePtr = Marshal.StringToHGlobalUni(home);
-            IntPtr namePtr = Marshal.StringToHGlobalUni(exePath);
+            IntPtr namePtr = Marshal.StringToHGlobalUni(bundledHome != null ? pythonExe : exePath);
             setHome(homePtr);
             setName(namePtr);
             init();
@@ -226,6 +247,124 @@ except Exception:
             MessageBox(IntPtr.Zero, text ?? "Gregmatics failed to start.", "Gregmatics", MbOk | MbIconError);
         }
 
+        // A released exe has a zip appended after the program, then its length and "GREGPACK".
+        static string Unpack(string exePath, out string error)
+        {
+            error = "Gregmatics could not find its program files.";
+            try
+            {
+                using (var stream = new FileStream(exePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    if (stream.Length < 12)
+                        return null;
+                    byte[] tail = new byte[12];
+                    stream.Seek(-12, SeekOrigin.End);
+                    if (stream.Read(tail, 0, 12) != 12)
+                        return null;
+                    if (Encoding.ASCII.GetString(tail, 4, 8) != PackMagic)
+                        return null;
+                    int length = BitConverter.ToInt32(tail, 0);
+                    if (length <= 0 || length > stream.Length - 12)
+                    {
+                        error = "This copy of Gregmatics.exe is damaged.";
+                        return null;
+                    }
+                    stream.Seek(-(12L + length), SeekOrigin.End);
+                    byte[] zip = new byte[length];
+                    int read = 0;
+                    while (read < length)
+                    {
+                        int got = stream.Read(zip, read, length - read);
+                        if (got <= 0)
+                        {
+                            error = "This copy of Gregmatics.exe is damaged.";
+                            return null;
+                        }
+                        read += got;
+                    }
+                    string hash;
+                    using (var sha = SHA256.Create())
+                    {
+                        byte[] sum = sha.ComputeHash(zip);
+                        var text = new StringBuilder(sum.Length * 2);
+                        foreach (byte b in sum)
+                            text.Append(b.ToString("x2"));
+                        hash = text.ToString();
+                    }
+                    string appRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Gregmatics", "app");
+                    string dest = Path.Combine(appRoot, hash);
+                    string ready = Path.Combine(dest, "ready");
+                    if (!File.Exists(ready))
+                    {
+                        if (Directory.Exists(dest))
+                            Directory.Delete(dest, true);
+                        Directory.CreateDirectory(dest);
+                        using (var mem = new MemoryStream(zip))
+                        using (var archive = new ZipArchive(mem, ZipArchiveMode.Read))
+                        {
+                            string fullDest = Path.GetFullPath(dest) + Path.DirectorySeparatorChar;
+                            foreach (ZipArchiveEntry entry in archive.Entries)
+                            {
+                                string name = entry.FullName.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                                string path = Path.GetFullPath(Path.Combine(dest, name));
+                                if (!path.StartsWith(fullDest, StringComparison.OrdinalIgnoreCase))
+                                    continue;
+                                if (name.EndsWith(Path.DirectorySeparatorChar.ToString()) || entry.Name.Length == 0)
+                                {
+                                    Directory.CreateDirectory(path);
+                                    continue;
+                                }
+                                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                                entry.ExtractToFile(path, true);
+                            }
+                        }
+                        File.WriteAllText(ready, "ok");
+                    }
+                    if (Directory.Exists(appRoot))
+                    {
+                        foreach (string old in Directory.GetDirectories(appRoot))
+                        {
+                            if (string.Equals(old, dest, StringComparison.OrdinalIgnoreCase))
+                                continue;
+                            try
+                            {
+                                Directory.Delete(old, true);
+                            }
+                            catch (IOException)
+                            {
+                            }
+                        }
+                    }
+                    error = "";
+                    return dest;
+                }
+            }
+            catch (Exception ex)
+            {
+                error = "Gregmatics could not open its program files.\r\n" + ex.Message;
+                return null;
+            }
+        }
+
+        static bool FindBundled(string home, out string pythonExe, out string dll, out string error)
+        {
+            pythonExe = Path.Combine(home, "python.exe");
+            dll = "";
+            foreach (string candidate in Directory.GetFiles(home, "python3*.dll"))
+            {
+                string name = Path.GetFileName(candidate);
+                if (name.StartsWith("python3") && name.Length > "python3.dll".Length && name.EndsWith(".dll"))
+                    dll = candidate;
+            }
+            if (!File.Exists(pythonExe) || dll.Length == 0 || !File.Exists(dll))
+            {
+                error = "Gregmatics could not find its Python files.";
+                return false;
+            }
+            error = "";
+            return true;
+        }
+
         static bool FindPython(out string home, out string pythonExe, out string dll, out string error)
         {
             home = "";
@@ -255,9 +394,10 @@ except Exception:
             return true;
         }
 
-        static bool CanImport(string pythonExe, string module)
+        static bool CanImport(string pythonExe, string module, out string detail)
         {
-            RunProcess(pythonExe, "-c \"import " + module + "\"", out _, out int code);
+            string output = RunProcess(pythonExe, "-c \"import " + module + "\"", out string stderr, out int code);
+            detail = (stderr + "\r\n" + output).Trim();
             return code == 0;
         }
 

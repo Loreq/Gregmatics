@@ -269,6 +269,11 @@ dialog.sheet .coord .corner input {
   padding: 12px 20px 16px;
   border-top: 1px solid #2a2622;
 }
+#settings-dialog .app-version {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
 #settings-dialog [data-section="bounds"] {
   grid-column: 2;
   grid-row: 2;

@@ -21,6 +21,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 OUT = ROOT / "out"
 EDITOR_DATA = HERE / "editor" / "data.js"
+PROJECT = ROOT / "launcher" / "Gregmatics.csproj"
 
 
 def replace(tmp: Path, path: Path) -> None:
@@ -69,8 +70,22 @@ def editor_multi(m) -> dict:
     return entry
 
 
+def app_version() -> str:
+    """The program version. It is the Version property in the launcher project."""
+    import xml.etree.ElementTree as ET
+
+    root = ET.parse(PROJECT).getroot()
+    for node in root.iter("Version"):
+        line = (node.text or "").strip()
+        parts = line.split(".")
+        if len(parts) == 3 and all(part.isdigit() for part in parts):
+            return line
+    raise SystemExit(f"{PROJECT.name} needs a Version like 0.1.0")
+
+
 def write_editor_data(text: str) -> None:
     base = {
+        "app": app_version(),
         "version": hashlib.sha1(text.encode("utf-8")).hexdigest()[:12],
         "layout": json.loads(text),
         "catalog": {
