@@ -1,16 +1,52 @@
 """Record types. Coordinates are world X and Z, both ends inside. Y comes from the floor."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Iterator
+
+# One step toward each side, as (dx, dz). North is -Z.
 DIRS = {"n": (0, -1), "s": (0, 1), "e": (1, 0), "w": (-1, 0)}
+OPPOSITE = {"n": "s", "s": "n", "e": "w", "w": "e"}
+
+# A footprint as (x0, x1, z0, z1).
+Box = tuple
 
 
 class LayoutError(ValueError):
     """The plan has a record the model cannot use."""
 
 
+def cells_in(box: Box) -> Iterator[tuple]:
+    """Every (x, z) in a footprint, column by column."""
+    x0, x1, z0, z1 = box
+    for x in range(x0, x1 + 1):
+        for z in range(z0, z1 + 1):
+            yield x, z
+
+
+class Boxed:
+    """A record with a footprint: x0..x1 by z0..z1."""
+
+    @property
+    def box(self) -> Box:
+        """The footprint as (x0, x1, z0, z1)."""
+        return self.x0, self.x1, self.z0, self.z1
+
+    @property
+    def size(self) -> tuple:
+        """Blocks across X, then blocks across Z."""
+        return self.x1 - self.x0 + 1, self.z1 - self.z0 + 1
+
+    def cells(self) -> Iterator[tuple]:
+        """Every (x, z) the footprint covers."""
+        return cells_in(self.box)
+
+
 @dataclass(frozen=True)
 class Floor:
+    """One storey: its slab, its air, and the outline it is drawn with."""
+
     id: str
     name: str
     # The solid block under the floor. Air starts one above it.
@@ -28,6 +64,7 @@ class Floor:
 
     @property
     def air(self) -> tuple:
+        """The lowest and highest Y of the floor's standard air."""
         return self.slab + 1, self.slab + self.height
 
     @property
@@ -35,9 +72,16 @@ class Floor:
         """Head height: the Y a floor plan is cut at."""
         return self.slab + 2
 
+    @property
+    def span(self) -> Box | None:
+        """The footprint the plan gives this floor, or None when it leaves it out."""
+        return None if self.x0 is None else (self.x0, self.x1, self.z0, self.z1)
+
 
 @dataclass(frozen=True)
-class Room:
+class Room(Boxed):
+    """A dug room. Its id is also the tag its cells carry in the model."""
+
     id: str
     floor: str
     name: str
@@ -64,7 +108,9 @@ class Room:
 
 
 @dataclass(frozen=True)
-class Street:
+class Street(Boxed):
+    """A walkway, or the entrance when its style is "entry"."""
+
     id: str
     floor: str
     x0: int
@@ -83,7 +129,9 @@ class Street:
 
 
 @dataclass(frozen=True)
-class Door:
+class Door(Boxed):
+    """An opening through the one-block wall between two spaces."""
+
     id: str
     floor: str
     x0: int
@@ -95,7 +143,9 @@ class Door:
 
 
 @dataclass(frozen=True)
-class Stair:
+class Stair(Boxed):
+    """A climb between two floors, with the same footprint on both."""
+
     id: str
     x0: int
     x1: int
@@ -110,8 +160,9 @@ class Stair:
 
 
 @dataclass(frozen=True)
-class Shaft:
+class Shaft(Boxed):
     """Open to the sky: dug from just above its room's ceiling up through the ground."""
+
     id: str
     room: str
     floor: str
@@ -128,15 +179,23 @@ class Shaft:
 @dataclass(frozen=True)
 class Lift:
     """One elevator block per floor, all at the same X and Z."""
+
     id: str
     x: int
     z: int
     floors: tuple
     label: str = ""
 
+    @property
+    def box(self) -> Box:
+        """The one block the lift stands on."""
+        return self.x, self.x, self.z, self.z
+
 
 @dataclass(frozen=True)
-class Trench:
+class Trench(Boxed):
+    """A run of the pipe crawl."""
+
     id: str
     x0: int
     x1: int
@@ -145,7 +204,9 @@ class Trench:
 
 
 @dataclass(frozen=True)
-class Pad:
+class Pad(Boxed):
+    """A multiblock's footprint, or a wallshared row of them."""
+
     num: int
     key: str
     room: str
@@ -169,6 +230,8 @@ class Pad:
 
 @dataclass(frozen=True)
 class Wall:
+    """A row of singleblock machines, one per slot."""
+
     id: str
     room: str
     x: int
@@ -181,9 +244,19 @@ class Wall:
     tiers: tuple = ()
     title: str = ""
 
+    @property
+    def box(self) -> Box:
+        """The cells the row covers, empty slots included."""
+        dx, dz = DIRS[self.along]
+        last = max(1, len(self.codes)) - 1
+        xe, ze = self.x + dx * last, self.z + dz * last
+        return min(self.x, xe), max(self.x, xe), min(self.z, ze), max(self.z, ze)
+
 
 @dataclass(frozen=True)
-class Mark:
+class Mark(Boxed):
+    """Something painted on a room's floor: an area, a ring, a service core, or a name."""
+
     room: str
     x0: int
     x1: int
@@ -201,6 +274,8 @@ class Mark:
 
 @dataclass(frozen=True)
 class Machine:
+    """One singleblock machine: a filled slot of a machine row."""
+
     code: str
     x: int
     z: int
