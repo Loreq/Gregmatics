@@ -1,0 +1,355 @@
+[
+  {
+    "key": "coolant",
+    "name": "Coolant Tower",
+    "short": "COOL",
+    "tier": "EV",
+    "size": [
+      11,
+      11,
+      13
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Coolant_Tower"
+  },
+  {
+    "key": "dtank",
+    "name": "Dissolution Tank",
+    "short": "DTANK",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Dissolution_Tank"
+  },
+  {
+    "key": "crusher",
+    "name": "Extreme Entity Crusher",
+    "short": "CRUSH",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Extreme_Entity_Crusher"
+  },
+  {
+    "key": "freactor",
+    "name": "Fluid Reactor",
+    "short": "FREAC",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Fluid_Reactor"
+  },
+  {
+    "key": "alchemy",
+    "name": "Fountain of Alchemy",
+    "short": "ALCH",
+    "tier": "EV",
+    "size": [
+      7,
+      5,
+      3
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Fountain_of_Alchemy"
+  },
+  {
+    "key": "copy3d",
+    "name": "Industrial 3D Copying Machine",
+    "short": "COPY",
+    "tier": "EV",
+    "size": [
+      5,
+      7,
+      5
+    ],
+    "pollution": 50,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_3D_Copying_Machine"
+  },
+  {
+    "key": "ibend",
+    "name": "Industrial Bending Machine",
+    "short": "IBEN",
+    "tier": "EV",
+    "size": [
+      3,
+      6,
+      3
+    ],
+    "pollution": 480,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Bending_Machine"
+  },
+  {
+    "key": "icen",
+    "name": "Industrial Centrifuge",
+    "short": "ICEN",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "pollution": 300,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Centrifuge"
+  },
+  {
+    "key": "icoke",
+    "name": "Industrial Coke Oven",
+    "short": "ICOKE",
+    "tier": "EV",
+    "size": [
+      5,
+      6,
+      7
+    ],
+    "span": [
+      5,
+      5,
+      6,
+      36,
+      7,
+      7
+    ],
+    "pollution": 80,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Coke_Oven",
+    "note": "5 wide, 6–36 long, and 7 tall."
+  },
+  {
+    "key": "iform",
+    "name": "Industrial Forming Press",
+    "short": "IFPR",
+    "tier": "EV",
+    "size": [
+      3,
+      5,
+      5
+    ],
+    "pollution": 240,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Forming_Press"
+  },
+  {
+    "key": "imac",
+    "name": "Industrial Maceration Stack",
+    "short": "IMAC",
+    "tier": "EV",
+    "size": [
+      3,
+      3,
+      6
+    ],
+    "fits": [
+      [
+        3,
+        3,
+        6
+      ],
+      [
+        5,
+        5,
+        7
+      ]
+    ],
+    "pollution": 400,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Maceration_Stack",
+    "note": "T1 is 3×3×6. T2 is 5×5×7."
+  },
+  {
+    "key": "ilat",
+    "name": "Industrial Precision Lathe",
+    "short": "ILAT",
+    "tier": "EV",
+    "size": [
+      5,
+      7,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Precision_Lathe"
+  },
+  {
+    "key": "lsc",
+    "name": "Lapotronic Supercapacitor",
+    "short": "LSC",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      4
+    ],
+    "span": [
+      5,
+      5,
+      4,
+      50
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Lapotronic_Supercapacitor",
+    "note": "5×5, and 4–50 tall."
+  },
+  {
+    "key": "lce",
+    "name": "Large Combustion Engine",
+    "short": "LCE",
+    "tier": "EV",
+    "size": [
+      3,
+      8,
+      3
+    ],
+    "pollution": 480,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Combustion_Engine"
+  },
+  {
+    "key": "leco",
+    "name": "Large Electric Compressor",
+    "short": "LECO",
+    "tier": "EV",
+    "size": [
+      7,
+      7,
+      8
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Electric_Compressor"
+  },
+  {
+    "key": "lfex",
+    "name": "Large Fluid Extractor",
+    "short": "LFEX",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      9
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Fluid_Extractor"
+  },
+  {
+    "key": "lgt",
+    "name": "Large Gas Turbine",
+    "short": "LGT",
+    "tier": "EV",
+    "size": [
+      6,
+      3,
+      3
+    ],
+    "pollution": 300,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Gas_Turbine"
+  },
+  {
+    "key": "lhe",
+    "name": "Large Heat Exchanger",
+    "short": "LHE",
+    "tier": "EV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Heat_Exchanger"
+  },
+  {
+    "key": "lne",
+    "name": "Large Neutralization Engine",
+    "short": "LNE",
+    "tier": "EV",
+    "size": [
+      3,
+      11,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Neutralization_Engine"
+  },
+  {
+    "key": "lsb",
+    "name": "Large Semifluid Burner",
+    "short": "LSB",
+    "tier": "EV",
+    "size": [
+      4,
+      3,
+      3
+    ],
+    "pollution": 1280,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Semifluid_Burner"
+  },
+  {
+    "key": "ltr",
+    "name": "Large Thermal Refinery",
+    "short": "LTR",
+    "tier": "EV",
+    "size": [
+      5,
+      5,
+      8
+    ],
+    "pollution": 1000,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Thermal_Refinery"
+  },
+  {
+    "key": "odrill",
+    "name": "Ore Drilling Plant",
+    "short": "ODRILL",
+    "tier": "EV",
+    "size": [
+      3,
+      3,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Ore_Drilling_Plant"
+  },
+  {
+    "key": "owp",
+    "name": "Ore Washing Plant",
+    "short": "OWP",
+    "tier": "EV",
+    "size": [
+      9,
+      5,
+      4
+    ],
+    "pollution": 100,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Ore_Washing_Plant"
+  },
+  {
+    "key": "sofc",
+    "name": "Solid-Oxide Fuel Cell",
+    "short": "SOFC",
+    "tier": "EV",
+    "size": [
+      5,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Solid-Oxide_Fuel_Cell"
+  },
+  {
+    "key": "tesla",
+    "name": "Tesla Tower",
+    "short": "TESLA",
+    "tier": "EV",
+    "size": [
+      7,
+      7,
+      17
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Tesla_Tower"
+  }
+]

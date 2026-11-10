@@ -1,0 +1,179 @@
+[
+  {
+    "key": "smelter",
+    "name": "Multi Smelter",
+    "short": "SMELT",
+    "tier": "MV",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "pollution": 400,
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Multi_Smelter"
+  },
+  {
+    "key": "pyrolyse",
+    "name": "Pyrolyse Oven",
+    "short": "PYRO",
+    "tier": "MV",
+    "size": [
+      5,
+      7,
+      6
+    ],
+    "pollution": 300,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Pyrolyse_Oven",
+    "note": "2.9 structure: 12 coils, wallshares half its coils."
+  },
+  {
+    "key": "boiler",
+    "name": "Large Boiler",
+    "short": "BOIL",
+    "tier": "MV",
+    "size": [
+      3,
+      5,
+      6
+    ],
+    "pollution": 200,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Boiler",
+    "note": "Bronze is MV (200), steel is HV (400 gibbl/s)."
+  },
+  {
+    "key": "farm",
+    "name": "Industrial Farm",
+    "short": "IF",
+    "tier": "MV",
+    "size": [
+      4,
+      5,
+      4
+    ],
+    "span": [
+      3,
+      14,
+      5,
+      5,
+      4,
+      4
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Farm",
+    "note": "Length is 3 at MV and one more each tier, up to 14. Width 5, height 4. Simulates sky and water."
+  },
+  {
+    "key": "adv_coke",
+    "name": "Advanced Coke Oven",
+    "short": "ACOKE",
+    "tier": "MV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "pollution": 80,
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Advanced_Coke_Oven"
+  },
+  {
+    "key": "algae",
+    "name": "Algae Farm",
+    "short": "ALGAE",
+    "tier": "MV",
+    "size": [
+      10,
+      3,
+      6
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Algae_Farm"
+  },
+  {
+    "key": "alveary",
+    "name": "Alveary",
+    "short": "ALV",
+    "tier": "MV",
+    "size": [
+      3,
+      4,
+      3
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Alveary"
+  },
+  {
+    "key": "backfill",
+    "name": "Concrete Backfiller",
+    "short": "FILL",
+    "tier": "MV",
+    "size": [
+      3,
+      3,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Concrete_Backfiller"
+  },
+  {
+    "key": "chemplant",
+    "name": "ExxonMobil Chemical Plant",
+    "short": "EXXON",
+    "tier": "MV",
+    "size": [
+      7,
+      7,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/ExxonMobil_Chemical_Plant"
+  },
+  {
+    "key": "fdrill",
+    "name": "Fluid Drilling Rig",
+    "short": "FDRILL",
+    "tier": "MV",
+    "size": [
+      3,
+      3,
+      7
+    ],
+    "fits": [
+      [
+        3,
+        3,
+        7
+      ],
+      [
+        9,
+        9,
+        14
+      ]
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Fluid_Drilling_Rig",
+    "note": "T1–T4 are 3×3×7. The infinite rig is 9×9×14."
+  },
+  {
+    "key": "research",
+    "name": "Research Completer",
+    "short": "RSCH",
+    "tier": "MV",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "span": [
+      3,
+      13,
+      3,
+      3,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Research_Completer",
+    "note": "3–13 long, 3 wide, and 3 tall."
+  }
+]

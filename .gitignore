@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+blueprints/out/_tmp-*
+blueprints/editor/_tmp-*
+launcher/bin/
+launcher/obj/
+_design/
+.cursor/
+/layout.json
+/layout/
+/out/
+/Gregmatics.exe
+blueprints/editor/data.js

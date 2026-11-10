@@ -1,0 +1,23 @@
+[
+  {
+    "code": "CMG",
+    "name": "Crop Manager",
+    "group": "farm"
+  },
+  {
+    "code": "CBR",
+    "name": "Crop Breeder",
+    "group": "farm"
+  },
+  {
+    "code": "SGN",
+    "name": "Seed Generator",
+    "group": "farm"
+  },
+  {
+    "code": "WAC",
+    "name": "World Accelerator",
+    "group": "farm",
+    "amps": 6
+  }
+]

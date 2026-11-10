@@ -1,0 +1,56 @@
+[
+  {
+    "key": "blood_altar",
+    "name": "Blood Altar, tier 5",
+    "short": "ALTAR T5",
+    "tier": "-",
+    "size": [
+      19,
+      19,
+      7
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Blood_Altar",
+    "note": "T3 7×7×4, T4 11×11×6, T5 19×19×7."
+  },
+  {
+    "key": "infusion",
+    "name": "Infusion Altar",
+    "short": "MATRIX",
+    "tier": "-",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "gt": false,
+    "source": "https://thaumcraft-4.fandom.com/wiki/Infusion_Altar",
+    "note": "Pedestals within 8 of the matrix, same level, 180° pairs. Jars within 12."
+  },
+  {
+    "key": "witch_altar",
+    "name": "Witchery Altar",
+    "short": "ALTAR",
+    "tier": "-",
+    "size": [
+      2,
+      3,
+      1
+    ],
+    "gt": false,
+    "source": "https://witchery.angelic.industries/altar.html",
+    "note": "Draws power from plants within ~14 blocks. Devices within 16, or 32 with an Arthana."
+  },
+  {
+    "key": "mana",
+    "name": "Mana pool and spreaders",
+    "short": "POOL",
+    "tier": "-",
+    "size": [
+      3,
+      3,
+      1
+    ],
+    "gt": false
+  }
+]

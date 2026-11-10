@@ -1,0 +1,22 @@
+[
+  {
+    "code": "CAS",
+    "name": "Circuit Assembler",
+    "group": "elec"
+  },
+  {
+    "code": "LEN",
+    "name": "Laser Engraver",
+    "group": "elec"
+  },
+  {
+    "code": "SCN",
+    "name": "Scanner",
+    "group": "elec"
+  },
+  {
+    "code": "PRT",
+    "name": "Printer",
+    "group": "elec"
+  }
+]

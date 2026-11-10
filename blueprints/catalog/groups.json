@@ -1,0 +1,11 @@
+{
+  "ore": "Ore line",
+  "form": "Forming and parts",
+  "chem": "Chemistry",
+  "elec": "Electronics",
+  "power": "Power",
+  "store": "Storage",
+  "farm": "Crops",
+  "util": "Utility",
+  "space": "Space"
+}

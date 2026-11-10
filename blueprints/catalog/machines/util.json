@@ -1,0 +1,14 @@
+[
+  {
+    "code": "WCH",
+    "name": "Wireless Charger",
+    "group": "util",
+    "amps": 2
+  },
+  {
+    "code": "PDD",
+    "name": "Pollution Detection Device",
+    "group": "util",
+    "note": "Reads its own chunk. Redstone out above the set level."
+  }
+]

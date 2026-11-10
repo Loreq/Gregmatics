@@ -1,0 +1,37 @@
+[
+  {
+    "code": "CHR",
+    "name": "Chemical Reactor",
+    "group": "chem"
+  },
+  {
+    "code": "MIX",
+    "name": "Mixer",
+    "group": "chem"
+  },
+  {
+    "code": "DIS",
+    "name": "Distillery",
+    "group": "chem"
+  },
+  {
+    "code": "FHE",
+    "name": "Fluid Heater",
+    "group": "chem"
+  },
+  {
+    "code": "FER",
+    "name": "Fermenter",
+    "group": "chem"
+  },
+  {
+    "code": "BRW",
+    "name": "Brewery",
+    "group": "chem"
+  },
+  {
+    "code": "ACL",
+    "name": "Autoclave",
+    "group": "chem"
+  }
+]

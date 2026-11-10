@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gregmatics</title>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<nav class="menubar" aria-label="Menus">
+  <div class="menu" data-menu="file">
+    <button type="button" class="menu-label" aria-expanded="false" aria-haspopup="menu" aria-controls="file-panel">File</button>
+    <div id="file-panel" class="menu-panel" role="menu" hidden>
+      <button id="new" type="button" role="menuitem">New</button>
+      <button id="load" type="button" role="menuitem">Load</button>
+      <button id="menu-save" type="button" role="menuitem">Save</button>
+      <hr class="menu-rule">
+      <button id="revert" type="button" role="menuitem">Revert</button>
+      <button id="png" type="button" role="menuitem">Export PNG</button>
+      <hr class="menu-rule">
+      <button id="settings" type="button" role="menuitem">Settings</button>
+    </div>
+  </div>
+</nav>
+<header class="bar">
+  <div class="brand">
+    <img src="../../launcher/Gregmatics.ico" width="22" height="22" alt="">
+    <strong>Gregmatics</strong>
+    <span id="file-state" class="pill unsaved" hidden>Unsaved</span>
+  </div>
+  <div id="plan-title" class="plan-title"></div>
+  <div id="tools" class="tools" role="toolbar" aria-label="Tools"></div>
+</header>
+<div id="banner" class="banner" hidden></div>
+<main>
+  <aside id="stack" class="stack" aria-label="Floors">
+    <div class="stack-head">
+      <h2 title="Order follows each floor's slab and height. The pen sets its footprint. + adds a floor in that gap.">Floors</h2>
+      <button id="view-3d" type="button" aria-pressed="false" title="3D view" aria-label="3D view">
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M9 2.5 15.5 6 9 9.5 2.5 6Z"/>
+          <path d="M2.5 6V12L9 15.5V9.5"/>
+          <path d="M15.5 6V12L9 15.5"/>
+        </svg>
+      </button>
+    </div>
+    <div id="stack-body" class="stack-body"></div>
+  </aside>
+  <section id="view" class="view">
+    <canvas id="plan" tabindex="0" aria-label="Floor plan"></canvas>
+    <canvas id="space" hidden tabindex="0" aria-label="3D view"></canvas>
+    <canvas id="space-tags" aria-hidden="true"></canvas>
+    <div id="toast" class="toast" hidden></div>
+  </section>
+  <aside class="side">
+  <div class="side-tools plan-only">
+    <label class="toggle"><input id="show-others" type="checkbox" checked> Passthrough</label>
+    <label class="toggle"><input id="show-contents" type="checkbox" checked> Contents</label>
+    <div class="group">
+      <button id="undo" type="button">Undo</button>
+      <button id="redo" type="button">Redo</button>
+      <button id="copy" type="button">Copy</button>
+      <button id="paste" type="button">Paste</button>
+    </div>
+  </div>
+    <section id="picker" class="plan-only" hidden>
+      <h2 id="picker-title">Place</h2>
+      <input id="picker-search" type="search" placeholder="Search" autocomplete="off">
+      <ul id="picker-list" class="list picker"></ul>
+    </section>
+    <section class="plan-only">
+      <h2 id="sel-title">Nothing selected</h2>
+      <form id="fields" autocomplete="off"></form>
+    </section>
+    <section class="plan-only">
+      <h2>Checks <span id="check-count" class="count"></span></h2>
+      <ul id="checks" class="list"></ul>
+    </section>
+    <section class="plan-only">
+      <h2 id="zones-title">On this floor</h2>
+      <ul id="zones" class="list"></ul>
+    </section>
+    <section id="space-panel" hidden>
+      <h2>3D</h2>
+      <p class="hint">Drag to turn. Right-drag to slide. The wheel zooms toward the pointer. Double-click something to frame it. Double-click empty ground to fit the base. The name under the pointer shows at the lower left.</p>
+      <div id="space-layers"></div>
+    </section>
+  </aside>
+</main>
+<footer class="status">
+  <span id="cursor"></span>
+  <span id="status" role="status"></span>
+</footer>
+<dialog id="floor-dialog">
+  <form method="dialog">
+    <h2 id="floor-title">Add floor</h2>
+    <label>Name <input name="name" required></label>
+    <label id="floor-under-field">Hangs under <select name="under"></select></label>
+    <div class="row">
+      <label id="floor-slab-field">Y <input name="slab" type="number" required></label>
+      <label id="floor-gap-field">
+        <span class="label-line">Gap <button type="button" class="help" title="Solid blocks between this basement and the floor it hangs under.">?</button></span>
+        <input name="below" type="number" min="1">
+      </label>
+      <label>Height <input name="height" type="number" min="1" required></label>
+    </div>
+    <label id="floor-pen-field">Outline <input name="pen" type="color"></label>
+    <p id="floor-hint" class="hint" hidden></p>
+    <p id="floor-error" class="error" role="alert"></p>
+    <menu>
+      <button id="floor-delete" type="button" class="danger">Delete floor</button>
+      <span class="spacer"></span>
+      <button value="cancel" type="submit" formnovalidate>Cancel</button>
+      <button id="floor-ok" value="ok" type="submit" class="primary">Add floor</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="settings-dialog" class="sheet">
+  <form method="dialog">
+    <header class="sheet-head">
+      <h2>Settings</h2>
+      <button value="cancel" class="sheet-close" type="submit" aria-label="Close">×</button>
+    </header>
+    <div class="settings-side">
+      <section class="sheet-section" data-section="plan">
+        <h3>Plan</h3>
+        <div class="sheet-row">
+          <span>Name</span>
+          <span class="sheet-field">
+            <input id="plan-name" type="text" autocomplete="off" aria-label="Floorplan name">
+            <span id="plan-file" class="file-preview"></span>
+          </span>
+        </div>
+        <div class="sheet-row">
+          <span>Tier</span>
+          <select id="tier"></select>
+        </div>
+        <div class="sheet-row">
+          <span>Autosave</span>
+          <input id="autosave" type="checkbox" checked aria-label="Autosave">
+        </div>
+      </section>
+      <section class="sheet-section" data-section="library">
+        <h3>Library</h3>
+        <div class="sheet-row">
+          <span>Folder</span>
+          <span class="sheet-field folder-line">
+            <span id="plan-folder" class="folder-path"></span>
+            <button id="plan-folder-change" type="button">Change</button>
+          </span>
+        </div>
+      </section>
+    </div>
+    <section class="sheet-section" data-section="bounds">
+      <h3>Baseline</h3>
+      <div id="settings-bounds"></div>
+      <p id="settings-bounds-error" class="error" role="alert"></p>
+    </section>
+    <menu class="settings-actions">
+      <button value="cancel" type="submit">Cancel</button>
+      <button id="settings-save" value="ok" type="submit" class="primary">Save</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="new-dialog" class="sheet">
+  <form id="new-form">
+    <header class="sheet-head">
+      <h2>New plan</h2>
+      <button id="new-close" class="sheet-close" type="button" aria-label="Close">×</button>
+    </header>
+    <section class="sheet-section">
+      <div class="sheet-row">
+        <span>Name</span>
+        <input id="new-name" name="name" type="text" required autocomplete="off" aria-label="Floorplan name">
+      </div>
+      <p id="new-file" class="file-preview"></p>
+    </section>
+    <section class="sheet-section">
+      <h3>Bounds</h3>
+      <div id="new-bounds"></div>
+      <p id="new-error" class="error" role="alert"></p>
+    </section>
+    <menu>
+      <button id="new-create" type="submit" class="primary">Create</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="confirm-dialog">
+  <form method="dialog">
+    <p id="confirm-text"></p>
+    <menu>
+      <button value="cancel" type="submit">Cancel</button>
+      <button id="confirm-alt" value="alt" type="submit" hidden>Exit</button>
+      <button id="confirm-ok" value="ok" type="submit" class="primary">Continue</button>
+    </menu>
+  </form>
+</dialog>
+
+<input id="file-input" type="file" accept=".gregmatic,.json,application/json" hidden>
+<script src="data.js"></script>
+<script src="core.js"></script>
+<script src="view3d.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

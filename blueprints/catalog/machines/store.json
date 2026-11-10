@@ -1,0 +1,14 @@
+[
+  {
+    "code": "STK",
+    "name": "Super Tank",
+    "group": "store",
+    "note": "LV 4M, MV 8M, HV 16M litres."
+  },
+  {
+    "code": "SCH",
+    "name": "Super Chest",
+    "group": "store",
+    "note": "LV 4M, MV 8M, HV 16M items."
+  }
+]

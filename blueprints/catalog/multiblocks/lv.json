@@ -1,0 +1,53 @@
+[
+  {
+    "key": "ebf",
+    "name": "Electric Blast Furnace",
+    "short": "EBF",
+    "tier": "LV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "pollution": 400,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Electric_Blast_Furnace",
+    "note": "Wallshare coils; never share energy hatches."
+  },
+  {
+    "key": "eaf",
+    "name": "Electric Air Filter",
+    "short": "EAF",
+    "tier": "LV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "side_air": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Electric_Air_Filter",
+    "note": "T1 scrubs a 3×3-chunk area, T2 (HV) 5×5."
+  },
+  {
+    "key": "multifarm",
+    "name": "Multifarm",
+    "short": "MFARM",
+    "tier": "LV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "span": [
+      3,
+      5,
+      4,
+      4
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Multifarm",
+    "note": "The footprint is 3×3, 3×4, 4×4, 3×5, 4×5, or 5×5, and it is 4 tall."
+  }
+]

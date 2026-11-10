@@ -1,0 +1,77 @@
+[
+  {
+    "key": "coke",
+    "name": "Coke Oven",
+    "short": "COKE",
+    "tier": "Stone",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "pollution": 10,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Coke_Oven",
+    "note": "GT multiblock in 2.9; coke oven hatches, quad wallshare."
+  },
+  {
+    "key": "smeltery",
+    "name": "Smeltery",
+    "short": "SMLT",
+    "tier": "Stone",
+    "size": [
+      3,
+      3,
+      2
+    ],
+    "span": [
+      3,
+      11,
+      2,
+      11
+    ],
+    "square": true,
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Smeltery",
+    "note": "A square from 3×3 to 11×11, and 2–11 tall."
+  },
+  {
+    "key": "vend",
+    "name": "Vending Machine",
+    "short": "VEND",
+    "tier": "Stone",
+    "size": [
+      1,
+      2,
+      3
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Vending_Machine"
+  },
+  {
+    "key": "wtank",
+    "name": "Water Tank",
+    "short": "WTANK",
+    "tier": "Stone",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Water_Tank"
+  },
+  {
+    "key": "wind",
+    "name": "Windmill",
+    "short": "WIND",
+    "tier": "Stone",
+    "size": [
+      7,
+      7,
+      12
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Windmill"
+  }
+]

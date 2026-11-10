@@ -1,0 +1,83 @@
+[
+  {
+    "code": "MAC",
+    "name": "Macerator",
+    "group": "ore"
+  },
+  {
+    "code": "HAM",
+    "name": "Forge Hammer",
+    "group": "ore"
+  },
+  {
+    "code": "OWA",
+    "name": "Ore Washer",
+    "group": "ore"
+  },
+  {
+    "code": "SWA",
+    "name": "Simple Washer",
+    "group": "ore"
+  },
+  {
+    "code": "THC",
+    "name": "Thermal Centrifuge",
+    "group": "ore",
+    "amps": 2
+  },
+  {
+    "code": "CBA",
+    "name": "Chemical Bath",
+    "group": "ore"
+  },
+  {
+    "code": "SFT",
+    "name": "Sifter",
+    "group": "ore"
+  },
+  {
+    "code": "EMS",
+    "name": "Electromagnetic Separator",
+    "group": "ore"
+  },
+  {
+    "code": "CEN",
+    "name": "Centrifuge",
+    "group": "ore"
+  },
+  {
+    "code": "ELZ",
+    "name": "Electrolyzer",
+    "group": "ore"
+  },
+  {
+    "code": "FUR",
+    "name": "Electric Furnace",
+    "group": "ore"
+  },
+  {
+    "code": "PKG",
+    "name": "Packager",
+    "group": "ore"
+  },
+  {
+    "code": "UPK",
+    "name": "Unpackager",
+    "group": "ore"
+  },
+  {
+    "code": "EXR",
+    "name": "Extractor",
+    "group": "ore"
+  },
+  {
+    "code": "FEX",
+    "name": "Fluid Extractor",
+    "group": "ore"
+  },
+  {
+    "code": "CMP",
+    "name": "Compressor",
+    "group": "ore"
+  }
+]

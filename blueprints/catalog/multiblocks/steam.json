@@ -1,0 +1,212 @@
+[
+  {
+    "key": "bbf",
+    "name": "Bricked Blast Furnace",
+    "short": "BBF",
+    "tier": "Steam",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "pollution": 200,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Bricked_Blast_Furnace"
+  },
+  {
+    "key": "charcoal",
+    "name": "Charcoal Pile Igniter",
+    "short": "CHAR",
+    "tier": "Steam",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "span": [
+      3,
+      13,
+      3,
+      7
+    ],
+    "pollution": 100,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Charcoal_Pile_Igniter",
+    "note": "Each side is 3–13, and it is 3–7 tall."
+  },
+  {
+    "key": "rc_boiler",
+    "name": "Railcraft Boiler",
+    "short": "RCB",
+    "tier": "Steam",
+    "size": [
+      1,
+      1,
+      2
+    ],
+    "fits": [
+      [
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        2,
+        3
+      ],
+      [
+        2,
+        2,
+        4
+      ],
+      [
+        3,
+        3,
+        3
+      ],
+      [
+        3,
+        3,
+        4
+      ],
+      [
+        3,
+        3,
+        5
+      ]
+    ],
+    "pollution": 20,
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Railcraft_Boiler",
+    "note": "Only 1×1×2, 2×2×3, 2×2×4, 3×3×3, 3×3×4, or 3×3×5."
+  },
+  {
+    "key": "rc_tank",
+    "name": "Railcraft Tank",
+    "short": "RCT",
+    "tier": "Steam",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "span": [
+      3,
+      9,
+      4,
+      8
+    ],
+    "square": true,
+    "odd": true,
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Railcraft_Tank",
+    "note": "An odd square of 3, 5, 7, or 9, and 4–8 tall."
+  },
+  {
+    "key": "sblend",
+    "name": "Steam Blender",
+    "short": "SBL",
+    "tier": "Steam",
+    "size": [
+      5,
+      5,
+      4
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Blender"
+  },
+  {
+    "key": "sfuse",
+    "name": "Steam Fuser",
+    "short": "SFU",
+    "tier": "Steam",
+    "size": [
+      4,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Fuser"
+  },
+  {
+    "key": "sgrind",
+    "name": "Steam Grinder",
+    "short": "SGR",
+    "tier": "Steam",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Grinder"
+  },
+  {
+    "key": "shearth",
+    "name": "Steam Hearth",
+    "short": "STH",
+    "tier": "Steam",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Hearth"
+  },
+  {
+    "key": "spress",
+    "name": "Steam Presser",
+    "short": "SPR",
+    "tier": "Steam",
+    "size": [
+      5,
+      5,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Presser"
+  },
+  {
+    "key": "spurify",
+    "name": "Steam Purifier",
+    "short": "SPU",
+    "tier": "Steam",
+    "size": [
+      5,
+      9,
+      6
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Purifier"
+  },
+  {
+    "key": "ssep",
+    "name": "Steam Separator",
+    "short": "SEP",
+    "tier": "Steam",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Separator"
+  },
+  {
+    "key": "squash",
+    "name": "Steam Squasher",
+    "short": "SQS",
+    "tier": "Steam",
+    "size": [
+      7,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Steam_Squasher"
+  },
+  {
+    "key": "pump",
+    "name": "Water Pump",
+    "short": "PUMP",
+    "tier": "Steam",
+    "size": [
+      4,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Water_Pump"
+  }
+]

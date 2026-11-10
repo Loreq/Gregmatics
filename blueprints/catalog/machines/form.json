@@ -1,0 +1,69 @@
+[
+  {
+    "code": "ALS",
+    "name": "Alloy Smelter",
+    "group": "form"
+  },
+  {
+    "code": "ARC",
+    "name": "Arc Furnace",
+    "group": "form",
+    "amps": 3
+  },
+  {
+    "code": "FSO",
+    "name": "Fluid Solidifier",
+    "group": "form"
+  },
+  {
+    "code": "EXT",
+    "name": "Extruder",
+    "group": "form"
+  },
+  {
+    "code": "BEN",
+    "name": "Bending Machine",
+    "group": "form"
+  },
+  {
+    "code": "FPR",
+    "name": "Forming Press",
+    "group": "form"
+  },
+  {
+    "code": "LAT",
+    "name": "Lathe",
+    "group": "form"
+  },
+  {
+    "code": "WIR",
+    "name": "Wiremill",
+    "group": "form"
+  },
+  {
+    "code": "CUT",
+    "name": "Cutting Machine",
+    "group": "form"
+  },
+  {
+    "code": "POL",
+    "name": "Electromagnetic Polarizer",
+    "group": "form"
+  },
+  {
+    "code": "ASM",
+    "name": "Assembler",
+    "group": "form"
+  },
+  {
+    "code": "CAN",
+    "name": "Canner",
+    "group": "form",
+    "note": "2.9 merged the fluid canner into it."
+  },
+  {
+    "code": "AWB",
+    "name": "Auto Workbench",
+    "group": "form"
+  }
+]

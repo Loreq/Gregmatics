@@ -1,0 +1,26 @@
+[
+  {
+    "code": "GTB",
+    "name": "Gas Turbine",
+    "group": "power",
+    "pollution": true,
+    "note": "Benzene, phenol, toluene, methane."
+  },
+  {
+    "code": "CMB",
+    "name": "Combustion Generator",
+    "group": "power",
+    "pollution": true,
+    "note": "Diesel, cetane-boosted diesel."
+  },
+  {
+    "code": "BAT",
+    "name": "Battery Buffer",
+    "group": "power"
+  },
+  {
+    "code": "TRF",
+    "name": "Transformer",
+    "group": "power"
+  }
+]

@@ -1,0 +1,21 @@
+[
+  {
+    "code": "FUL",
+    "name": "Fuel Loader",
+    "group": "space",
+    "gt": false,
+    "note": "91 EU/s. Must touch the launch pad."
+  },
+  {
+    "code": "OXC",
+    "name": "Oxygen Collector",
+    "group": "space",
+    "gt": false
+  },
+  {
+    "code": "OXP",
+    "name": "Oxygen Compressor",
+    "group": "space",
+    "gt": false
+  }
+]
