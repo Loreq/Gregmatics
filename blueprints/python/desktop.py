@@ -31,7 +31,7 @@ clr.AddReference("System.Windows.Forms")
 clr.AddReference("System.Drawing")
 clr.AddReference(interop_dll_path("Microsoft.Web.WebView2.Core.dll"))
 clr.AddReference(interop_dll_path("Microsoft.Web.WebView2.WinForms.dll"))
-# The loader is native, one folder per processor. A packed release carries only its own.
+# The loader is native, one folder per processor. A release carries only its own.
 for platform in ("win-x64", "win-x86", "win-arm64"):
     try:
         os.environ["Path"] += ";" + interop_dll_path(platform)

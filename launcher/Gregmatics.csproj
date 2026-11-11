@@ -13,17 +13,35 @@
     <Product>Gregmatics</Product>
     <AssemblyTitle>Gregmatics</AssemblyTitle>
     <Description>Floor plans for a GregTech New Horizons base</Description>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="pack\**" />
+    <EmbeddedResource Remove="pack\**" />
+    <None Remove="pack\**" />
     <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+  <Target Name="PackSite" AfterTargets="ResolvePackageAssets" BeforeTargets="PrepareResourceNames">
+    <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)pack\Pack.csproj&quot; -c Release -o &quot;$(MSBuildThisFileDirectory)pack\bin&quot;" />
+    <Exec
+      WorkingDirectory="$(MSBuildThisFileDirectory)"
+      Command="&quot;$(MSBuildThisFileDirectory)pack\bin\Pack.exe&quot;"
+      EnvironmentVariables="GREG_ROOT=$(MSBuildThisFileDirectory)..;GREG_NUGET=$(NuGetPackageRoot);GREG_OUT=$(MSBuildProjectDirectory)\site.zip" />
+    <ItemGroup>
+      <EmbeddedResource Remove="$(MSBuildProjectDirectory)\site.zip" />
+      <EmbeddedResource Include="$(MSBuildProjectDirectory)\site.zip">
+        <LogicalName>Gregmatics.site.zip</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
   <Target Name="StampAppManifest" BeforeTargets="BeforeBuild">
     <MakeDir Directories="$(IntermediateOutputPath)" />
     <Copy SourceFiles="$(MSBuildThisFileDirectory)app.manifest" DestinationFiles="$(IntermediateOutputPath)app.manifest" />

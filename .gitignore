@@ -5,6 +5,9 @@ blueprints/out/_tmp-*
 blueprints/editor/_tmp-*
 launcher/bin/
 launcher/obj/
+launcher/pack/bin/
+launcher/pack/obj/
+launcher/site.zip
 _design/
 .cursor/
 /layout.json

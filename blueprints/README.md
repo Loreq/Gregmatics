@@ -13,8 +13,8 @@ Pillow draws the sheets. On Windows, Gregmatics opens in its own window.
 | --- | --- |
 | `%APPDATA%\Gregmatics` | The plans. Each one is a `.gregmatic` file. `settings.json` there remembers the folder and the open file. Not part of the repository. |
 | `../launcher/Gregmatics.csproj` | The program version is the `Version` property. Settings reads it. |
-| `../launcher/Program.cs` | The launcher. As `start.exe` it runs the code in this folder with the Python on this machine. As the released `Gregmatics.exe` it unpacks its own Python and files first. |
-| `../build.ps1` | Builds `start.exe` and `release\Gregmatics.exe`. |
+| `../launcher/Program.cs` | The window. As `start.exe` it reads the editor in this folder. As the released `Gregmatics.exe` it reads the editor packed inside the file. |
+| `../build.cmd` | Builds `start.exe` and `release\Gregmatics.exe`. |
 | `catalog/` | GTNH 2.9.0 machine facts as JSON. Multiblocks are one file per tier in `catalog/multiblocks/`. Machines are one file per group in `catalog/machines/`, because a machine's voltage is set when you place it. `groups.json` names the groups. `elevator.json` is the elevator reach. |
 | `python/` | The program. Run the commands above from this folder. |
 | `python/layout.py` | Loads the open `.gregmatic` file, checks every record, and works out each zone's Y from its floor. |
@@ -44,7 +44,7 @@ A floor's Y only lives on the floor. Change its slab and everything on it moves 
 
 ## The editor
 
-On Windows, open `start.exe` in the project folder, or run `py -3 python/desktop.py` here. The released file is `Gregmatics.exe`, and it carries the program with it. The window reads the open `.gregmatic` file. Save writes that file and `editor/data.js`. Run `py -3 python/generate.py` to redraw the sheets into `out/`.
+On Windows, open `start.exe` in the project folder, or run `py -3 python/desktop.py` here. The release is `Gregmatics.exe`, one file, with the editor and the catalog inside it. The window reads the open `.gregmatic` file. Save writes that file and, from the project folder, `editor/data.js`. Run `py -3 python/generate.py` to redraw the sheets into `out/`.
 
 The tools are in the [project README](../README.md).
 
@@ -56,7 +56,7 @@ The tools are in the [project README](../README.md).
 
 ## The editor's scripts
 
-The page is plain scripts with no build step, grouped in folders. `index.html` loads them in the order below, and `build.ps1` ships every file under `editor/` except `data.js`. A new script needs a `<script>` line in `index.html`. A new file under `app/` also needs its empty name added in `app/app-state.js`, and it goes in the folder for its subject.
+The page is plain scripts with no build step, grouped in folders. `index.html` loads them in the order below, and `build.cmd` ships every file under `editor/` except `data.js`. A new script needs a `<script>` line in `index.html`. A new file under `app/` also needs its empty name added in `app/app-state.js`, and it goes in the folder for its subject.
 
 `core/` holds the data rules and never touches the page. Each file adds its functions to one object, `Core`, and the Python side follows the same rules.
 
@@ -117,7 +117,7 @@ The page itself is `App`, in `app/`. `app-state.js` and `app.js` sit at the top 
 | `app/panels/app-fields.js` | `Fields` | The selection panel: one set of fields for each kind of thing. |
 | `app/app.js` | | Adds every listener and starts the editor. It loads last. |
 
-Functions are kept short, and each one has a one-line header saying what it does: a docstring in Python, `/** */` in the scripts, `/// <summary>` in the launcher, and a `#` line in `build.ps1`. A number or a color with a meaning has a name at the top of its file.
+Functions are kept short, and each one has a one-line header saying what it does: a docstring in Python, `/** */` in the scripts, and `/// <summary>` in the launcher. A number or a color with a meaning has a name at the top of its file.
 
 ## The audit
 
