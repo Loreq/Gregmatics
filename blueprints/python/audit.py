@@ -13,7 +13,6 @@ LIFT_REACH = ELEVATOR["reach"]
 
 ROOMS = {room.id: room for room in L.ROOMS}
 FLOORS = tuple(M.FLOORS)
-ENTRY = next(street for street in L.STREETS if street.style == "entry")
 
 # A street is this wide, and a door at least this long.
 MIN_WIDTH = 3
@@ -59,12 +58,11 @@ class Survey:
 # --- shapes ---
 
 def _street_widths() -> list[str]:
-    """A street is at least three wide. The entrance is measured across its mouth only."""
+    """A street is at least three wide."""
     problems = []
     for street in L.STREETS:
         wide, deep = street.size
-        narrow = wide < MIN_WIDTH if street.style == "entry" else min(wide, deep) < MIN_WIDTH
-        if narrow:
+        if min(wide, deep) < MIN_WIDTH:
             problems.append(f"street {street.id} is narrower than {MIN_WIDTH}")
     return problems
 
@@ -242,31 +240,30 @@ def _inside_rim(x: int, z: int) -> bool:
 
 def _spine_mouth(x: int, z: int, style: str) -> bool:
     """Whether a cell is the street, or its trench, running out through the rim to the entrance."""
-    return z == L.SQUARE[2] and ENTRY.x0 <= x <= ENTRY.x1 and style in ("corridor", "trench")
+    if z != L.SQUARE[2] or style not in ("corridor", "trench"):
+        return False
+    return any(street.style == "entry" and street.x0 <= x <= street.x1 for street in L.STREETS)
 
 
 def _bounds_problem(x: int, z: int, style: str) -> str:
     """What is wrong with where one dug cell sits, or ""."""
     if style == "well":
         return ""
-    if style == "entry":
-        return f"entrance is inside the square at {x},{z}" if z >= L.SQUARE[2] else ""
+    if style == "entry" and z < L.SQUARE[2]:
+        return ""
     if _inside_rim(x, z) or _spine_mouth(x, z, style):
         return ""
     return f"{style} reaches the rim or beyond at {x},{z}"
 
 
 def check_bounds(survey: Survey) -> list[str]:
-    """Nothing but the entrance leaves the rim. The first cell that does ends the check."""
-    problems = []
+    """The first cell that leaves the rim ends the check. An entrance may also sit north of the square."""
     for (x, z), spans in survey.grid.items():
         for _y0, _y1, style in spans:
             problem = _bounds_problem(x, z, style)
             if problem:
-                problems.append(problem)
-            if problem and style != "entry":
-                return problems
-    return problems
+                return [problem]
+    return []
 
 
 def _thin_floor(x: int, z: int, lower: tuple, upper: tuple) -> str:
@@ -277,6 +274,17 @@ def _thin_floor(x: int, z: int, lower: tuple, upper: tuple) -> str:
         return ""
     gap = b0 - a1 - 1
     return f"only {gap} solid between {below} and {above} at {x},{z}" if gap < MIN_SOLID else ""
+
+
+def check_crawl_neighbors(_survey: Survey) -> list[str]:
+    """Two crawlspaces with no floor between them. Each stays under its floor."""
+    bands = [(floor.air[0], False) for floor in L.FLOORS]
+    bands.extend((crawl["air"][0], True) for crawl in L.CRAWLS)
+    bands.sort()
+    for earlier, later in zip(bands, bands[1:]):
+        if earlier[1] and later[1]:
+            return ["Two crawlspaces cannot be next to each other."]
+    return []
 
 
 def check_floors(survey: Survey) -> list[str]:
@@ -290,20 +298,28 @@ def check_floors(survey: Survey) -> list[str]:
 
 
 def _crawl_pieces(grid: dict) -> list[str]:
-    """The pipe crawl is one connected run."""
-    y = L.CRAWL["walk"]
-    pipes = M.components({(x, z) for (x, z) in grid if M.style_at(grid, x, z, y) == "trench"})
-    if len(pipes) == 1:
-        return []
-    return [f"{L.CRAWL['name'].lower()} splits into {len(pipes)} pieces: {sorted(len(p) for p in pipes)}"]
+    """Each crawlspace is one connected run. A plan with none has nothing to split."""
+    problems = []
+    for crawl in L.CRAWLS:
+        y = crawl["walk"]
+        pipes = M.components({(x, z) for (x, z) in grid if M.style_at(grid, x, z, y) == "trench"})
+        if len(pipes) <= 1:
+            continue
+        problems.append(f"{crawl['name'].lower()} splits into {len(pipes)} pieces: {sorted(len(p) for p in pipes)}")
+    return problems
+
+
+def _entrances_only(grid: dict, floor: str, parts: list) -> bool:
+    """Whether every separate piece of a floor is an entrance and nothing else."""
+    return all(M.floor_style(grid, x, z, floor) == "entry" for part in parts for x, z in part)
 
 
 def check_connectivity(survey: Survey) -> list[str]:
-    """Each floor is one walkable piece, and so is the pipe crawl."""
+    """Each floor is one walkable piece, and so is the pipe crawl. Separate entrances are ways in."""
     problems = []
     for floor in FLOORS:
         parts = M.components(survey.walkable[floor])
-        if len(parts) > 1:
+        if len(parts) > 1 and not _entrances_only(survey.grid, floor, parts):
             sizes = sorted((len(p), sorted(p)[0]) for p in parts)
             problems.append(f"{floor} floor splits into {len(parts)} walkable pieces: {sizes[:4]}")
     return problems + _crawl_pieces(survey.grid)
@@ -622,7 +638,8 @@ def check_lifts(survey: Survey) -> list[str]:
 
 # --- all of it ---
 
-CHECKS = (check_shapes, check_doors, check_stairs, check_walls, check_bounds, check_floors, check_connectivity,
+CHECKS = (check_shapes, check_doors, check_stairs, check_walls, check_bounds, check_crawl_neighbors,
+          check_floors, check_connectivity,
           check_pads, check_machines, check_pollution, check_rain, check_launch, check_cover, check_lifts)
 
 

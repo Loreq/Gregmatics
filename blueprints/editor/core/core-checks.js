@@ -6,7 +6,7 @@
 
   const Core = root.Core;
   const {
-    CRAWL, STEP, voltageRank, planTier, multiOpen, gap, inside, sameBox, pokesOut,
+    STEP, voltageRank, planTier, multiOpen, gap, inside, sameBox, pokesOut,
     floorById, roomById, chunkName, chunkCell,
     layerName, bandProblem, inner,
     rowSlots, wallSlots, machinesOn, padBlocks, padSizeProblem,
@@ -44,12 +44,15 @@
   }
 
   /** Cells the pipe crawl has: the trenches, and under every street of its floor that keeps a trench. */
-  function crawlCells(layout) {
+  function crawlCells(layout, crawl) {
     const cells = new Map();
     const add = (box, label) => eachCell(box, (x, z, key) => cells.set(key, label));
-    for (const t of layout.trenches) add(t, t.id);
+    if (!crawl) return cells;
+    for (const t of layout.trenches) {
+      if (Core.trenchCrawl(layout, t) === crawl) add(t, t.id);
+    }
     for (const s of layout.streets) {
-      if (s.floor === layout.site.crawl.under && s.trench !== false) add(s, `under ${nameOf("streets", s)}`);
+      if (s.floor === crawl.under && s.trench !== false) add(s, `under ${nameOf("streets", s)}`);
     }
     return cells;
   }
@@ -147,9 +150,18 @@
     if (problem) survey.note(problem, null, null, null);
   }
 
+  /** Two crawlspaces with no floor between them. Each stays under its floor. */
+  function checkCrawlNeighbors(survey) {
+    const upper = Core.adjacentCrawls(survey.layout);
+    if (upper) survey.note("Two crawlspaces cannot be next to each other.", null, null, upper.id);
+  }
+
   /** The floor a record shows on: the crawl for a trench, else its floor, its first floor, or its room's. */
   function layerOf(layout, kind, z) {
-    if (kind === "trenches") return CRAWL;
+    if (kind === "trenches") {
+      const crawl = Core.trenchCrawl(layout, z);
+      return crawl ? Core.crawlLayerId(crawl) : null;
+    }
     return z.floor || (z.floors ? z.floors[0] : null) || (roomById(layout, z.room) || {}).floor;
   }
 
@@ -195,10 +207,12 @@
     }
   }
 
-  /** Every part of a floor can be walked to from the rest. */
+  /** Every part of a floor can be walked to from the rest. Separate entrances are ways in. */
   function checkReach(survey, floor) {
     const cells = survey.walk(floor.id);
-    for (const part of pieces(cells).slice(1)) {
+    const parts = pieces(cells);
+    if (parts.length > 1 && parts.every((part) => part.every((key) => cells.get(key) === "Entrance"))) return;
+    for (const part of parts.slice(1)) {
       survey.note(`${cells.get(part[0])} is cut off from the rest of the floor`, null, null, floor.id);
     }
   }
@@ -499,14 +513,16 @@
 
   /** Every trench joins the rest of the pipe crawl. */
   function checkCrawl(survey) {
-    const cells = crawlCells(survey.layout);
-    for (const part of pieces(cells).slice(1)) {
-      survey.note(`${cells.get(part[0])} is cut off from the other trenches`, null, null, CRAWL);
+    for (const crawl of Core.crawlRecords(survey.layout)) {
+      const cells = crawlCells(survey.layout, crawl);
+      for (const part of pieces(cells).slice(1)) {
+        survey.note(`${cells.get(part[0])} is cut off from the other trenches`, null, null, Core.crawlLayerId(crawl));
+      }
     }
   }
 
   // The checks in the order their problems are listed. The second group needs the catalog.
-  const PLAN_CHECKS = [checkBands, checkBounds, checkFloors, checkDoors, checkStairs, checkLifts, checkContents];
+  const PLAN_CHECKS = [checkBands, checkCrawlNeighbors, checkBounds, checkFloors, checkDoors, checkStairs, checkLifts, checkContents];
   const CATALOG_CHECKS = [checkSizes, checkEquipment, checkTier, checkPollution, checkCleanRooms];
 
   /** Problems a move can cause. Each item is { text, kind, index, layer, slot }. */

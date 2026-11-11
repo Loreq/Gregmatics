@@ -242,22 +242,51 @@
 
   // ---- chunks ----
 
+  /** The name of chunk column `index`: A, B, then Z, then AA, AB. */
+  function columnName(index) {
+    let n = index;
+    let name = "";
+    do {
+      name = String.fromCharCode(65 + (n % 26)) + name;
+      n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    return name;
+  }
+
+  /** The column names a site stores, whether that is a string of letters or a list. */
+  function columnList(columns) {
+    if (Array.isArray(columns)) return columns.slice();
+    return String(columns || "").split("");
+  }
+
+  /** The letters and row of a chunk name such as E6 or AA12, or null. */
+  function chunkParts(name) {
+    const match = /^([A-Z]+)(\d+)$/.exec(String(name || ""));
+    if (!match) return null;
+    return { letters: match[1], row: Number(match[2]) };
+  }
+
   /** The chunk column and row of the site's first chunk. */
   function chunkOrigin(layout) {
     return [layout.site.square.x0 >> 4, layout.site.square.z0 >> 4];
   }
 
-  /** The name of the chunk a cell is in, such as E6. A column past the site's letters is "?". */
+  /** The name of the chunk a cell is in, such as E6 or AA3. A column past the site's names is "?". */
   function chunkName(layout, x, z) {
     const [ox, oz] = chunkOrigin(layout);
-    const letter = layout.site.columns[(x >> 4) - ox] || "?";
+    const cols = columnList(layout.site.columns);
+    const letter = cols[(x >> 4) - ox] || "?";
     return letter + ((z >> 4) - oz + 1);
   }
 
-  /** The chunk column and row a name such as E6 stands for. */
+  /** The chunk column and row a name such as E6 or AA12 stands for. */
   function chunkCell(layout, name) {
     const [ox, oz] = chunkOrigin(layout);
-    return [layout.site.columns.indexOf(name[0]) + ox, Number(name.slice(1)) - 1 + oz];
+    const parts = chunkParts(name);
+    const cols = columnList(layout.site.columns);
+    const index = parts ? cols.indexOf(parts.letters) : -1;
+    const row = parts ? parts.row : NaN;
+    return [index + ox, row - 1 + oz];
   }
 
   /** The box of blocks a named chunk covers. */
@@ -273,6 +302,6 @@
     gap, inside, area, sameBox, containsBox, pokesOut, boxesOverlap, unionBoxes, orderedBox,
     shiftBox, shiftRecord, assignBox, middleCell,
     floorById, roomById, onFloor, roomAt, facingAway,
-    chunkOrigin, chunkName, chunkCell, chunkBounds,
+    chunkOrigin, chunkName, chunkCell, chunkBounds, columnName, columnList, chunkParts,
   };
 })(typeof window !== "undefined" ? window : globalThis);

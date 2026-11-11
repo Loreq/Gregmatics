@@ -15,7 +15,7 @@
 
   /** A layer's air as [low Y, high Y]. */
   function layerAir(layer) {
-    if (layer.crawl) return Core.crawlAir(L());
+    if (layer.crawl) return layer.air;
     return Core.floorAir(layer.floor);
   }
 

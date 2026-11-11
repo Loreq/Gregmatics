@@ -4,8 +4,8 @@
    App.Paint. Inside a file a plain call is to that file or to a helper from here; a call through a
    name, such as Panels.refresh(), goes to another file. The names are made here, empty, so the files
    can refer to each other whatever order they load in. core/core.js holds the data rules and never
-   touches the page. data.js holds the plan and catalog. desktop.py reads and writes the open
-   .gregmatic file. */
+   touches the page. data.js holds the plan and catalog. The Gregmatics window reads and writes
+   the open .gregmatic file. */
 (function () {
   "use strict";
 

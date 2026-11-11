@@ -5,7 +5,7 @@
   "use strict";
 
   const {
-    Core, CATALOG, CRAWL, SIDE_NAMES, state, L, snapshot, status, cellBox, insideBox, around,
+    Core, CATALOG, SIDE_NAMES, state, L, snapshot, status, cellBox, insideBox, around,
     Sel, History, Paint, Panels,
   } = App;
 
@@ -61,7 +61,7 @@
 
   /** What the placing tool would put on a cell, and whether it fits. The cell defaults to the one under the pointer. */
   function placement(cell = state.hover) {
-    if (!cell || !state.layout || state.layer === CRAWL) return null;
+    if (!cell || !state.layout || Core.isCrawlLayer(state.layout, state.layer)) return null;
     const home = Core.roomAt(L(), state.layer, cell[0], cell[1]);
     if (state.tool === "pads") return padPlacement(cell, home);
     if (state.tool === "machines") return machinePlacement(cell, home);

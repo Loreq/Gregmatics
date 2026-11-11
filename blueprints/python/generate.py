@@ -93,12 +93,12 @@ def editor_catalog() -> dict:
     }
 
 
-def write_editor_data(text: str) -> None:
+def write_editor_data(text: str | None) -> None:
     """Write editor/data.js: the program version, the plan, and the catalog, for the page to load."""
     base = {
         "app": app_version(),
-        "version": fingerprint(text),
-        "layout": json.loads(text),
+        "version": fingerprint(text) if text else "",
+        "layout": json.loads(text) if text else None,
         "catalog": editor_catalog(),
     }
     save_text(EDITOR_DATA, DATA_HEADER + "window.BASE = " + json.dumps(base, ensure_ascii=False) + ";\n")
@@ -119,18 +119,19 @@ def _figures(entries: list) -> str:
 
 def _dirty_sentence(L) -> str:
     """Where polluting machines stay, or nothing when the plan sets no dirty chunks aside."""
-    dirty = sorted(L.DIRTY, key=lambda name: (L.COLUMNS.index(name[0]), int(name[1:])))
+    dirty = sorted(L.DIRTY, key=lambda name: (L.COLUMNS.index(L.chunk_parts(name)[0]), L.chunk_parts(name)[1]))
     return f"\nPolluting machines stay in chunks {dirty[0]}–{dirty[-1]} on every floor." if dirty else ""
 
 
 def _site_summary(L) -> str:
     """The paragraph that says where the base is: its square, its floors, its entrance, and its dirty chunks."""
     x0, x1, z0, z1 = L.SQUARE
-    entry = next(street for street in L.STREETS if street.style == "entry")
+    entries = [street for street in L.STREETS if street.style == "entry"]
     floors = ", ".join(f"{floor.name.lower()} Y={floor.slab}" for floor in L.FLOORS)
-    return (f"<p>Working square ({x0}, {z0}) to ({x1}, {z1}), dug into the mountain. Floor slabs: {html.escape(floors)}.\n"
-            f"The entrance is the {entry.x1 - entry.x0 + 1}-wide walk at X {entry.x0}..{entry.x1}, just north of the square."
-            f"{_dirty_sentence(L)}</p>")
+    listed = ", ".join(f"X {street.x0}..{street.x1}" for street in entries)
+    mouth = f"\nEntrances at {listed}, just north of the square." if listed else ""
+    return (f"<p>Working square ({x0}, {z0}) to ({x1}, {z1}), dug into the mountain. Floor slabs: {html.escape(floors)}."
+            f"{mouth}{_dirty_sentence(L)}</p>")
 
 
 def _index_page(summary: str, figures: str) -> str:

@@ -24,9 +24,9 @@
   function copy(opts) {
     const quiet = Boolean(opts && opts.quiet);
     const source = (opts && opts.items) || Sel.selection();
-    const { items, skipped } = Edit.actionItems(source);
+    const { items } = Edit.actionItems(source);
     if (!items.length) {
-      if (!quiet) status(source.length ? "The entrance stays. Copy something else." : "Select something to copy.", true);
+      if (!quiet) status("Select something to copy.", true);
       return false;
     }
     const parts = items.map((item) => Core.capture(L(), item.kind, item.index, item.slot));
@@ -35,7 +35,7 @@
       cut: Boolean(opts && opts.cut), pasted: false,
     };
     Panels.renderButtons();
-    if (!quiet) status(`Copied ${Sel.namesOf(items)}.${skipped ? " The entrance stays." : ""}`);
+    if (!quiet) status(`Copied ${Sel.namesOf(items)}.`);
     return true;
   }
 
@@ -43,7 +43,7 @@
   async function cut() {
     const { items } = Edit.actionItems(Sel.selection());
     if (!items.length) {
-      status(Sel.selection().length ? "The entrance stays. Move it instead." : "Select something to cut.", true);
+      status("Select something to cut.", true);
       return;
     }
     if (!(await Dialogs.confirmRemove(items, "Cut"))) return;
@@ -58,12 +58,15 @@
    * cannot go on the layer being shown. Trenches stay in the crawl; stairs and lifts keep the floors they join.
    */
   function pasteView(part) {
-    if (part.kind === "trenches") return { layer: CRAWL, floor: null };
+    if (part.kind === "trenches") {
+      const crawl = Core.trenchCrawl(L(), part.rec);
+      return { layer: crawl ? Core.crawlLayerId(crawl) : CRAWL, floor: null };
+    }
     if (part.kind === "stairs" || part.kind === "lifts") {
       const floors = part.rec.floors;
       return { layer: floors.includes(state.layer) ? state.layer : floors[0], floor: null };
     }
-    if (state.layer === CRAWL) return null;
+    if (Core.isCrawlLayer(L(), state.layer)) return null;
     return { layer: state.layer, floor: state.layer };
   }
 
@@ -156,7 +159,7 @@
   /** Copy and paste the selection in one step, leaving the clip as it was. */
   function duplicate() {
     if (!Edit.actionItems(Sel.selection()).items.length) {
-      status(Sel.selection().length ? "The entrance stays. Duplicate something else." : "Select something to duplicate.", true);
+      status("Select something to duplicate.", true);
       return;
     }
     const saved = state.clip;

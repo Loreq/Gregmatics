@@ -201,6 +201,8 @@ class Trench(Boxed):
     x1: int
     z0: int
     z1: int
+    # The crawlspace this run is dug in. Empty means the only one, or the one named crawl.
+    crawl: str = ""
 
 
 @dataclass(frozen=True)

@@ -34,7 +34,9 @@
   /** Editable zones on a layer, in drawing order: big areas first, small things on top. The crawl has only trenches. */
   function zonesOn(layout, layer) {
     const out = [];
-    const tests = layer === CRAWL ? [["trenches", () => true]] : FLOOR_ZONES;
+    const tests = Core.isCrawlLayer(layout, layer)
+      ? [["trenches", (plan, z) => Core.trenchCrawl(plan, z) && Core.crawlLayerId(Core.trenchCrawl(plan, z)) === layer]]
+      : FLOOR_ZONES;
     for (const [kind, test] of tests) {
       layout[kind].forEach((z, index) => {
         if (test(layout, z, layer)) out.push({ kind, index, z });
@@ -117,8 +119,9 @@
     if (!reachesNorth || kind !== "streets" || !z) return box;
     if (z.style === "entry") return { x0: box.x0, x1: box.x1, z0: layout.site.sheet.z0, z1: box.z1 };
     if (!Number.isInteger(z.x0)) return box;
-    const entry = layout.streets.find((s) => s.style === "entry");
-    if (entry && z.floor === entry.floor && z.x0 >= entry.x0 && z.x1 <= entry.x1) {
+    const linedUp = layout.streets.some((street) => street.style === "entry" && street.floor === z.floor
+      && z.x0 >= street.x0 && z.x1 <= street.x1);
+    if (linedUp) {
       return { x0: box.x0, x1: box.x1, z0: layout.site.square.z0, z1: box.z1 };
     }
     return box;
@@ -135,8 +138,9 @@
   }
 
   /** The footprint of the floor the pipe crawl hangs under. */
-  function crawlBox(layout) {
-    const under = floorById(layout, layout.site.crawl.under);
+  function crawlBox(layout, layer) {
+    const crawl = Core.crawlByLayer(layout, layer) || Core.crawlRecords(layout)[0];
+    const under = crawl && floorById(layout, crawl.under);
     return under ? floorBox(layout, under) : inner(layout);
   }
 
@@ -154,7 +158,7 @@
       const boxes = ids.map((id) => floorById(layout, id)).filter(Boolean).map((floor) => floorBox(layout, floor));
       return boxes.length ? sharedBox(boxes) : inner(layout);
     }
-    if (kind === "trenches") return crawlBox(layout);
+    if (kind === "trenches") return crawlBox(layout, Core.crawlLayerId(Core.trenchCrawl(layout, z) || {}));
     const floor = floorOfRecord(layout, z);
     return zoneLimit(layout, kind, z, floor ? floorBox(layout, floor) : inner(layout));
   }
@@ -176,7 +180,10 @@
 
   /** Whether a record belongs to a floor. Trenches belong to the floor the crawl hangs under. */
   function zoneOnFloor(layout, floorId, kind, z) {
-    if (kind === "trenches") return layout.site.crawl.under === floorId;
+    if (kind === "trenches") {
+      const crawl = Core.trenchCrawl(layout, z);
+      return Boolean(crawl) && crawl.under === floorId;
+    }
     if (kind === "stairs" || kind === "lifts") return Array.isArray(z.floors) && z.floors.includes(floorId);
     if (z.floor) return z.floor === floorId;
     return z.room ? onFloor(layout, z.room, floorId) : false;
@@ -205,8 +212,8 @@
   function limitProblem(layout, floor, box) {
     if (containsBox(floorLimit(layout, floor), box)) return "";
     const main = mainFloor(layout);
-    const name = floor.name || "This floor";
-    return !main || isMain(layout, floor) ? `${name} stays inside the site.` : `${name} stays inside ${main.name}.`;
+    const name = Core.floorName(floor);
+    return !main || isMain(layout, floor) ? `${name} stays inside the site.` : `${name} stays inside ${Core.floorName(main)}.`;
   }
 
   /** What a smaller main floor would leave outside on the floors that fit inside it, or "". */
@@ -214,13 +221,21 @@
     for (const other of layout.floors) {
       if (other.id === floor.id) continue;
       if (hasSpan(other)) {
-        if (!containsBox(box, spanOf(other))) return `${other.name} stays inside this floor.`;
+        if (!containsBox(box, spanOf(other))) return `${Core.floorName(other)} stays inside this floor.`;
       } else {
-        const hit = floorContentsOutside(layout, other.id, box, other.name);
+        const hit = floorContentsOutside(layout, other.id, box, Core.floorName(other));
         if (hit) return hit;
       }
     }
     return "";
+  }
+
+  /** What is wrong with making this box the baseline, or "". The site moves to wrap it. */
+  function baselineProblem(layout, floor, box) {
+    const fit = Core.siteProblem(layout.site, box);
+    if (fit) return fit;
+    return floorContentsOutside(layout, floor.id, box, floor.name || "this floor")
+      || otherFloorsProblem(layout, floor, box);
   }
 
   /** A problem with this footprint for a floor, or "". The box is both ends inside. */
@@ -339,7 +354,7 @@
     for (const list of [layout.stairs, layout.lifts]) {
       for (const item of list) item.floors = item.floors.map((f) => (f === old ? id : f));
     }
-    if (layout.site.crawl.under === old) layout.site.crawl.under = id;
+    for (const crawl of Core.crawlRecords(layout)) if (crawl.under === old) crawl.under = id;
   }
 
   /** Rename a zone or floor, and every record that points at it. Returns a problem, or "". */
@@ -365,7 +380,7 @@
   Object.assign(Core, {
     ROOM_CONTENTS,
     zonesOn, contentsOn, contentsOf, boxOf, nameOf, anchorCell,
-    boundsFor, crawlBox, clampDelta, spanProblem,
+    boundsFor, crawlBox, clampDelta, spanProblem, baselineProblem,
     shiftZone, moveZone, circleRadius, setBox, addMark, rehome,
     uniqueId, rename, deleteZone,
   });

@@ -94,32 +94,65 @@ namespace Gregmatics
             }
         }
 
-        /// <summary>Write one plan. A file already holding the same text is left alone.</summary>
+        /// <summary>Write one plan, and remember it as the plan to open next.</summary>
         public static void WriteGregmatic(string path, string text)
         {
             text = Files.Ended(text);
             if (!Holds(path, text))
                 Files.SaveText(path, text);
+            string name = Path.GetFileName(path);
+            WriteSettings(Path.GetDirectoryName(path), name, null, name);
         }
 
         /// <summary>The open plan's text.</summary>
         public static string ReadText()
         {
-            return ReadGregmatic(EnsureCurrent());
+            string path = OpenLast();
+            if (path == null)
+                throw new LayoutException("No plan in " + PlanFolder());
+            return ReadGregmatic(path);
+        }
+
+        /// <summary>The plan to open: the one last saved, or the newest file when that one is gone. Null when the folder has none.</summary>
+        public static string OpenLast()
+        {
+            string folder = PlanFolder();
+            string edited = StoredEdited();
+            if (edited.Length > 0 && File.Exists(Path.Combine(folder, edited)))
+            {
+                if (!string.Equals(Path.GetFileName(CurrentFile()), edited, StringComparison.OrdinalIgnoreCase))
+                    WriteSettings(folder, edited, null, edited);
+                return Path.Combine(folder, edited);
+            }
+            string current = CurrentFile();
+            if (File.Exists(current))
+                return current;
+            List<string> found = GregmaticFiles(folder);
+            if (found.Count == 0)
+                return null;
+            string newest = found[0];
+            DateTime when = File.GetLastWriteTimeUtc(newest);
+            for (int i = 1; i < found.Count; i++)
+            {
+                DateTime written = File.GetLastWriteTimeUtc(found[i]);
+                if (written > when)
+                {
+                    newest = found[i];
+                    when = written;
+                }
+            }
+            string name = Path.GetFileName(newest);
+            WriteSettings(folder, name, null, name);
+            return newest;
         }
 
         /// <summary>The open plan. The folder's files are the only place a plan is stored.</summary>
         public static string EnsureCurrent()
         {
-            string path = CurrentFile();
-            if (File.Exists(path))
-                return path;
-            string folder = PlanFolder();
-            List<string> found = GregmaticFiles(folder);
-            if (found.Count == 0)
-                throw new LayoutException("No plan in " + folder);
-            WriteSettings(folder, Path.GetFileName(found[0]), null);
-            return found[0];
+            string path = OpenLast();
+            if (path == null)
+                throw new LayoutException("No plan in " + PlanFolder());
+            return path;
         }
 
         /// <summary>Lowercase, spaces become underscores, and every other character is dropped.</summary>
@@ -198,8 +231,12 @@ namespace Gregmatics
             if (File.Exists(dest))
                 throw new LayoutException(filename + " already exists");
             File.Move(src, dest);
-            WriteSettings(PlanFolder(), Path.GetFileName(dest), null);
-            return Path.GetFileName(dest);
+            string destName = Path.GetFileName(dest);
+            string edited = StoredEdited();
+            if (string.Equals(edited, Path.GetFileName(src), StringComparison.OrdinalIgnoreCase))
+                edited = destName;
+            WriteSettings(PlanFolder(), destName, null, edited);
+            return destName;
         }
 
         /// <summary>Make a plan in the plan folder the open one.</summary>
@@ -208,7 +245,7 @@ namespace Gregmatics
             string filename = Path.GetFileName(name ?? "");
             if (!File.Exists(Path.Combine(PlanFolder(), filename)))
                 throw new LayoutException("No plan named " + filename);
-            WriteSettings(PlanFolder(), filename, null);
+            WriteSettings(PlanFolder(), filename, null, filename);
             return filename;
         }
 
@@ -268,17 +305,33 @@ namespace Gregmatics
             return value != null && value.Type == JTokenType.String && value.Value<string>().Trim().Length > 0;
         }
 
-        /// <summary>Store the plan folder and the open plan. Autosave keeps its value unless one is given.</summary>
-        static void WriteSettings(string folder, string current, bool? autosave)
+        /// <summary>The file name of the plan last saved, or empty when none has been.</summary>
+        static string StoredEdited()
+        {
+            JObject stored = StoredSettings();
+            if (!Filled(stored["edited"]))
+                return "";
+            string name = Path.GetFileName(stored["edited"].Value<string>());
+            if (!name.EndsWith(PlanSuffix, StringComparison.OrdinalIgnoreCase))
+                name += PlanSuffix;
+            return name;
+        }
+
+        /// <summary>Store the plan folder, the open plan, and the plan last saved. Autosave and the last save keep their values unless one is given.</summary>
+        static void WriteSettings(string folder, string current, bool? autosave, string edited = null)
         {
             if (autosave == null)
                 autosave = Settings()["autosave"].Value<bool>();
+            if (edited == null)
+                edited = StoredEdited();
             var body = new JObject
             {
                 ["folder"] = folder,
                 ["current"] = Path.GetFileName(current),
                 ["autosave"] = autosave.Value,
             };
+            if (!string.IsNullOrEmpty(edited))
+                body["edited"] = Path.GetFileName(edited);
             Files.SaveText(Path.Combine(HomeDir(), SettingsName), JsonText.Dumps(body) + "\n");
         }
 

@@ -114,6 +114,7 @@
 
   /** Open the dialog, filled in from the plan. */
   async function open() {
+    if (!L()) return;
     Panels.syncTier();
     Files.refreshFolder();
     mountBounds();
@@ -153,7 +154,10 @@
     const tierChanged = tier !== currentTier;
     if (!boxChanged && !tierChanged) return;
     History.change(() => {
-      if (boxChanged) Core.writeSpan(L(), floor, box);
+      if (boxChanged) {
+        Core.placeSite(L().site, box);
+        Core.writeSpan(L(), floor, box);
+      }
       if (tierChanged) L().site.tier = tier;
     });
   }

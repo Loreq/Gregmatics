@@ -403,7 +403,8 @@ def level_lines() -> list[tuple]:
     for floor in L.FLOORS:
         lines.append((floor.slab, floor.name.lower()))
         lines.append((floor.air[1], f"{floor.name.lower()} ceiling"))
-    lines.append((L.CRAWL["air"][0], L.CRAWL["name"].lower()))
+    for crawl in L.CRAWLS:
+        lines.append((crawl["air"][0], crawl["name"].lower()))
     return sorted(lines)
 
 
@@ -685,7 +686,7 @@ def _ground_estimates(p: Plan) -> None:
 
 def terrain_plan(grid: dict, scale: int) -> Plan:
     """The whole site from above: the ground's height, and every floor's rooms over it."""
-    entrance = L.FLOOR[L.ENTRANCE_FLOOR]
+    entrance = L.shown_floor()
     p = Plan(grid, (L.X_MIN, L.X_MAX, L.Z_MIN, L.Z_MAX), scale, entrance.id, entrance.walk)
     _ground_bands(p)
     p.chunk_lines(TERRAIN_CHUNK_LINE)
@@ -774,7 +775,7 @@ def _key_grade(draw, px, py) -> None:
 
 def _terrain_keys(p: Plan) -> list:
     """(swatch painter, text) for each line and fill the mountain sheet uses."""
-    entrance = L.FLOOR[L.ENTRANCE_FLOOR]
+    entrance = L.shown_floor()
     roofs = {room.roof for room in L.ROOMS if room.grade}
     keys = [(_key_solid(L.rgb(entrance.pen)), f"{entrance.name} room, Y={entrance.slab}")]
     keys += [(_key_dashed(L.rgb(f.pen)), f"{f.name} room, Y={f.slab}") for f in reversed(L.FLOORS) if f.id != entrance.id]

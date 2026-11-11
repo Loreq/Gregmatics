@@ -18,7 +18,7 @@
   /** The footprint of the floor being shown, or of the floor over the crawl. */
   function activeBox() {
     const layout = L();
-    if (state.layer === Core.CRAWL) return Core.crawlBox(layout);
+    if (Core.isCrawlLayer(layout, state.layer)) return Core.crawlBox(layout, state.layer);
     const floor = layerFloor();
     return floor ? Core.floorBox(layout, floor) : Core.inner(layout);
   }
@@ -116,7 +116,7 @@
     const at = sketchBox(sketch, drawn, "streets", Core.boundsFor(layout, "streets", { floor: state.layer }));
     const street = {
       id: Core.uniqueId(layout, "streets", "street"), floor: state.layer, style: "corridor", ...at,
-      trench: state.layer === layout.site.crawl.under,
+      trench: Core.crawlRecords(layout).some((crawl) => crawl.under === state.layer),
     };
     History.change(() => layout.streets.push(street));
     return layout.streets.length - 1;
@@ -126,6 +126,8 @@
   function addTrench(sketch, drawn) {
     const layout = L();
     const trench = { id: Core.uniqueId(layout, "trenches", "trench"), ...sketchBox(sketch, drawn, "trenches", activeBox()) };
+    const home = Core.crawlByLayer(layout, state.layer);
+    if (home) trench.crawl = Core.crawlLayerId(home);
     History.change(() => layout.trenches.push(trench));
     return layout.trenches.length - 1;
   }

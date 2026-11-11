@@ -1,5 +1,5 @@
 /* Plans as files: starting up, opening a plan, and the folder plans live in. In the desktop window
-   the page asks desktop.py for the files with WebView2 messages. In a plain browser there is no
+   the page asks the Gregmatics window for the files with WebView2 messages. In a plain browser there is no
    window to ask, and the plan stays in the page. */
 (function (App) {
   "use strict";
@@ -176,6 +176,7 @@
 
   /** Show the plan the page starts with: `base`, the file as { layout, version }, or the browser's draft of it. */
   function showStart(base) {
+    Panels.setIdle(false);
     state.fileVersion = base.version;
     History.dropOldStack(base.layout);
     const start = resolveDraft(base);
@@ -185,11 +186,21 @@
     showStaleBanner();
   }
 
+  /** No plan is open: the page stays, and only File → New and File → Load do anything. */
+  function showEmpty() {
+    state.layout = null;
+    state.savedText = "";
+    state.planFile = "";
+    state.fileVersion = null;
+    Panels.showPlanTitle("");
+    Panels.setIdle(true);
+  }
+
   /** Load the plan when the page opens: from the desktop window's file when there is one, else from data.js. */
   async function boot() {
     if (booting || state.layout) return;
     booting = true;
-    if (!BASE || !BASE.layout) {
+    if (!BASE || !BASE.catalog) {
       status("The plan could not be loaded.", true);
       return;
     }
@@ -197,17 +208,34 @@
     const api = desktopApi();
     if (api) {
       try {
-        takeInfo(await api.plan_info());
+        const info = await api.plan_info();
+        takeInfo(info);
+        if (info && info.empty) {
+          showEmpty();
+          App.NewPlan.start();
+          return;
+        }
       } catch (err) {
         // Keep the checkbox's last value in this window.
       }
       const autosaveBox = $("autosave");
       if (autosaveBox) autosaveBox.checked = state.autosave;
       try {
-        takeDisk(base, await api.read_layout());
+        const disk = await api.read_layout();
+        if (disk && disk.empty) {
+          showEmpty();
+          App.NewPlan.start();
+          return;
+        }
+        takeDisk(base, disk);
       } catch (err) {
         status(`Could not read the plan: ${err && err.message ? err.message : err}`, true);
       }
+    }
+    if (!base.layout) {
+      showEmpty();
+      App.NewPlan.start();
+      return;
     }
     showStart(base);
   }
@@ -241,6 +269,7 @@
 
   /** Show a plan that was just opened or made, as saved, under a title. `planFile` names its file when the window gave one. */
   function showOpened(layout, message, fallbackTitle, planFile) {
+    Panels.setIdle(false);
     History.load(layout, message, Core.dumps(layout));
     if (planFile !== undefined) state.planFile = planFile;
     Panels.showPlanTitle((layout.site && layout.site.name) || fallbackTitle);

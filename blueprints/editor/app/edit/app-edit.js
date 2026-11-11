@@ -11,12 +11,6 @@
 
   // ---- sorting a selection ----
 
-  /** Items without the entrance, which stays where it is, and whether it was among them. */
-  function withoutEntrance(items) {
-    const kept = items.filter((item) => !(item.kind === "streets" && item.rec.style === "entry"));
-    return { kept, skipped: kept.length !== items.length };
-  }
-
   /**
    * Split items into the zones and the machines that act on their own. A room already carries what is
    * inside it, and a row carries its machines, so those are left out.
@@ -43,11 +37,10 @@
     return { zones, machines };
   }
 
-  /** The items a copy, cut, or delete acts on, and whether the entrance was left out. */
+  /** The items a copy, cut, or delete acts on. */
   function actionItems(items) {
-    const split = withoutEntrance(items);
-    const plan = independentItems(split.kept);
-    return { items: [...plan.zones, ...plan.machines], skipped: split.skipped };
+    const plan = independentItems(items);
+    return { items: [...plan.zones, ...plan.machines] };
   }
 
   /** What a move carries. Locked rooms stay where they are. Anything else in the selection still moves. */
@@ -255,9 +248,9 @@
    */
   async function removeSelected(opts) {
     if (!Sel.selection().length) return;
-    const { items, skipped } = actionItems(Sel.selection());
+    const { items } = actionItems(Sel.selection());
     if (!items.length) {
-      status("The entrance stays. Move it instead.", true);
+      status("Select something to delete.", true);
       return;
     }
     const verb = (opts && opts.verb) || "Delete";
@@ -266,7 +259,7 @@
     History.change(() => deleteItems(items));
     Sel.clear();
     Panels.refresh();
-    status(`${verb === "Cut" ? "Cut" : "Deleted"} ${names}.${skipped ? " The entrance stays." : ""}`);
+    status(`${verb === "Cut" ? "Cut" : "Deleted"} ${names}.`);
   }
 
   Object.assign(App.Edit, {

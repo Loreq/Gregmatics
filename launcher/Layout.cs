@@ -42,11 +42,11 @@ namespace Gregmatics
             int[] square;
             int[] sheet;
             int[] inner;
-            string columns;
+            string[] columns;
             int terrainRows;
             List<Floor> floors;
             Dictionary<string, Floor> floorById;
-            string crawlUnder;
+            List<CrawlSpace> crawlSpaces = new List<CrawlSpace>();
             List<Room> rooms;
             List<Street> streets;
             List<Door> doors;
@@ -71,13 +71,12 @@ namespace Gregmatics
                 ReadSite(data["site"] as JObject);
                 ReadPalette(data["palette"] as JObject);
                 ReadFloors(data["floors"] as JArray);
-                ReadCrawl((data["site"] as JObject)["crawl"] as JObject);
+                ReadCrawls(data["site"] as JObject);
                 rooms = ReadRooms(data["rooms"] as JArray);
                 var roomById = new Dictionary<string, Room>(StringComparer.Ordinal);
                 foreach (Room room in rooms)
                     roomById[room.Id] = room;
                 streets = ReadStreets(data["streets"] as JArray);
-                Entrance();
                 doors = ReadDoors(data["doors"] as JArray);
                 stairs = ReadStairs(data["stairs"] as JArray);
                 shafts = ReadShafts(data["shafts"] as JArray, roomById);
@@ -111,7 +110,7 @@ namespace Gregmatics
             /// <summary>The working square, the sheet's edges, the chunk grid, and the ground estimate.</summary>
             void ReadSite(JObject site)
             {
-                Fields(site, "site", new[] { "square", "sheet", "rim", "columns", "dirty", "cover", "terrain", "crawl" }, new[] { "tier", "name" });
+                Fields(site, "site", new[] { "square", "sheet", "rim", "columns", "dirty", "cover", "terrain" }, new[] { "tier", "name", "crawl", "crawls" });
                 if (Has(site, "tier"))
                     Choice(site["tier"], "site", "tier", Catalog.Voltage);
                 if (Has(site, "name"))
@@ -121,7 +120,7 @@ namespace Gregmatics
                 square = BoxOf(site["square"] as JObject, "site.square");
                 sheet = BoxOf(site["sheet"] as JObject, "site.sheet");
                 int rim = Int(site["rim"], "site", "rim", 0);
-                columns = Str(site["columns"], "site", "columns", false);
+                columns = ReadColumns(site["columns"]);
                 terrainRows = TerrainRows(site["terrain"] as JArray);
                 Dirty(site["dirty"] as JArray);
                 Int(site["cover"], "site", "cover", 0);
@@ -156,16 +155,59 @@ namespace Gregmatics
                 }
             }
 
-            /// <summary>Whether a name is a column letter and a row number that are both on the chunk grid.</summary>
+            /// <summary>The chunk column names. A string is one letter each; a list names them, such as AA.</summary>
+            static string[] ReadColumns(JToken value)
+            {
+                if (value != null && value.Type == JTokenType.String && value.Value<string>().Length > 0)
+                {
+                    string text = value.Value<string>();
+                    var names = new string[text.Length];
+                    for (int i = 0; i < text.Length; i++)
+                        names[i] = text[i].ToString();
+                    return names;
+                }
+                var list = value as JArray;
+                if (list == null || list.Count == 0)
+                    throw new LayoutException("site: columns should name the chunk columns");
+                var fromList = new string[list.Count];
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (list[i] == null || list[i].Type != JTokenType.String || list[i].Value<string>().Length == 0)
+                        throw new LayoutException("site: columns should name the chunk columns");
+                    fromList[i] = list[i].Value<string>();
+                }
+                return fromList;
+            }
+
+            /// <summary>The letters and row of a chunk name such as E6 or AA12.</summary>
+            static bool SplitChunk(string text, out string letters, out int row)
+            {
+                letters = "";
+                row = 0;
+                int split = 0;
+                while (split < text.Length && text[split] >= 'A' && text[split] <= 'Z')
+                    split++;
+                if (split == 0 || split == text.Length)
+                    return false;
+                for (int i = split; i < text.Length; i++)
+                {
+                    if (text[i] < '0' || text[i] > '9')
+                        return false;
+                }
+                letters = text.Substring(0, split);
+                return int.TryParse(text.Substring(split), NumberStyles.None, CultureInfo.InvariantCulture, out row);
+            }
+
+            /// <summary>Whether a name is a column and a row number that are both on the chunk grid.</summary>
             bool IsChunk(JToken name)
             {
                 if (name == null || name.Type != JTokenType.String)
                     return false;
-                string text = name.Value<string>();
-                if (text.Length < 2 || columns.IndexOf(text[0]) < 0)
-                    return false;
+                string letters;
                 int row;
-                return int.TryParse(text.Substring(1), NumberStyles.None, CultureInfo.InvariantCulture, out row) && row >= 1 && row <= terrainRows;
+                if (!SplitChunk(name.Value<string>(), out letters, out row))
+                    return false;
+                return Array.IndexOf(columns, letters) >= 0 && row >= 1 && row <= terrainRows;
             }
 
             /// <summary>The fill of each kind of dug cell, and the color of each machine group.</summary>
@@ -248,21 +290,111 @@ namespace Gregmatics
                 z1 = box[3];
             }
 
-            /// <summary>The pipe crawl: the floor it hangs under, and its band of air.</summary>
-            void ReadCrawl(JObject crawl)
+            /// <summary>Every crawlspace. site.crawl is one; site.crawls is a list. A plan has one of those, or neither.</summary>
+            void ReadCrawls(JObject site)
             {
-                Fields(crawl, "site.crawl", new[] { "name", "under", "below", "height" }, null);
-                Floor under = RefFloor(crawl["under"], "site.crawl", "under");
-                int top = under.Slab - Int(crawl["below"], "site.crawl", "below", 1);
-                int low = top - Int(crawl["height"], "site.crawl", "height", 2) + 1;
+                bool one = Has(site, "crawl");
+                bool many = Has(site, "crawls");
+                if (one && many)
+                    throw new LayoutException("site: a plan has crawl or crawls, not both");
+                var rows = new List<JObject>();
+                var wheres = new List<string>();
+                if (many)
+                {
+                    JArray list = site["crawls"] as JArray;
+                    if (list == null)
+                        throw new LayoutException("site.crawls should be a list");
+                    int index = 0;
+                    foreach (JToken token in list)
+                    {
+                        rows.Add(token as JObject);
+                        wheres.Add("site.crawls." + index);
+                        index++;
+                    }
+                }
+                else if (one)
+                {
+                    rows.Add(site["crawl"] as JObject);
+                    wheres.Add("site.crawl");
+                }
+                var used = new HashSet<string>(StringComparer.Ordinal);
+                for (int i = 0; i < rows.Count; i++)
+                    ReadOneCrawl(rows[i], wheres[i], used);
+                CheckAir();
+            }
+
+            /// <summary>One crawlspace: the floor it hangs under, and its band of air.</summary>
+            void ReadOneCrawl(JObject crawl, string where, HashSet<string> used)
+            {
+                Fields(crawl, where, new[] { "name", "under", "below", "height" }, new[] { "id" });
+                Floor under = RefFloor(crawl["under"], where, "under");
+                int top = under.Slab - Int(crawl["below"], where, "below", 1);
+                int low = top - Int(crawl["height"], where, "height", 2) + 1;
+                string id;
+                if (Has(crawl, "id"))
+                    id = Ident(crawl["id"], where, "id");
+                else if (used.Count == 0)
+                    id = CrawlId;
+                else
+                {
+                    int number = 2;
+                    while (used.Contains(CrawlId + "-" + number))
+                        number++;
+                    id = CrawlId + "-" + number;
+                }
+                if (!used.Add(id))
+                    throw new LayoutException(where + ": id " + JsonText.Quote(id) + " is already a crawlspace");
+                crawlSpaces.Add(new CrawlSpace { Id = id, Name = Str(crawl["name"], where, "name", false), Under = under.Id, Low = low, High = top });
+            }
+
+            /// <summary>Whether a sheet or a trench names this crawlspace.</summary>
+            bool IsCrawlId(string id)
+            {
+                if (string.IsNullOrEmpty(id))
+                    return false;
+                foreach (CrawlSpace crawl in crawlSpaces)
+                {
+                    if (crawl.Id == id)
+                        return true;
+                }
+                return false;
+            }
+
+            /// <summary>The crawlspace a trench is dug in, or null.</summary>
+            CrawlSpace TrenchOwner(Item trench)
+            {
+                if (!string.IsNullOrEmpty(trench.Crawl))
+                {
+                    foreach (CrawlSpace crawl in crawlSpaces)
+                    {
+                        if (crawl.Id == trench.Crawl)
+                            return crawl;
+                    }
+                    return null;
+                }
+                if (crawlSpaces.Count == 1)
+                    return crawlSpaces[0];
+                foreach (CrawlSpace crawl in crawlSpaces)
+                {
+                    if (crawl.Id == CrawlId)
+                        return crawl;
+                }
+                return null;
+            }
+
+            /// <summary>Every band of air stays inside the world.</summary>
+            void CheckAir()
+            {
                 foreach (Floor floor in floors)
                 {
                     if (floor.AirLow < WorldBottom || floor.AirHigh > WorldTop)
                         throw new LayoutException(floor.Name + ": air stays inside Y 0 through 255");
                 }
-                if (low < WorldBottom || top > WorldTop)
-                    throw new LayoutException("site.crawl: air stays inside Y 0 through 255");
-                crawlUnder = under.Id;
+                foreach (CrawlSpace crawl in crawlSpaces)
+                {
+                    if (crawl.Low < WorldBottom || crawl.High > WorldTop)
+                        throw new LayoutException("site.crawl: air stays inside Y 0 through 255");
+                }
             }
 
             /// <summary>The rooms.</summary>
@@ -348,20 +480,6 @@ namespace Gregmatics
                     Style = Choice(Pick(row, "style", "corridor"), where, "style", new[] { "corridor", "entry" }),
                     Label = Str(Pick(row, "label", ""), where, "label", true),
                 };
-            }
-
-            /// <summary>The one street that is the way in.</summary>
-            Street Entrance()
-            {
-                var entries = new List<Street>();
-                foreach (Street street in streets)
-                {
-                    if (street.Style == "entry")
-                        entries.Add(street);
-                }
-                if (entries.Count != 1)
-                    throw new LayoutException("streets: there should be exactly one entrance (style \"entry\"), not " + entries.Count);
-                return entries[0];
             }
 
             /// <summary>The doors.</summary>
@@ -496,10 +614,17 @@ namespace Gregmatics
                 {
                     JObject row = token as JObject;
                     string where = NameOf("trenches", index, token);
-                    Fields(row, where, new[] { "id", "x0", "x1", "z0", "z1" }, null);
+                    Fields(row, where, new[] { "id", "x0", "x1", "z0", "z1" }, new[] { "crawl" });
                     ids.Add(Ident(row["id"], where, "id"));
+                    string crawlId = "";
+                    if (Has(row, "crawl"))
+                    {
+                        crawlId = Ident(row["crawl"], where, "crawl");
+                        if (!IsCrawlId(crawlId))
+                            throw new LayoutException(where + ": " + crawlId + " is not a crawlspace");
+                    }
                     int[] box = BoxOf(row, where);
-                    list.Add(new Item { Id = ids[ids.Count - 1], Box = box });
+                    list.Add(new Item { Id = ids[ids.Count - 1], Box = box, Crawl = crawlId });
                     index++;
                 }
                 Unique(list, "trenches", "id", trench => trench.Id);
@@ -657,7 +782,7 @@ namespace Gregmatics
                         new[] { "floor", "region", "scale", "cuts", "profiles", "notes" });
                     string kind = Choice(row["kind"], where, "kind", SheetKinds);
                     string floor = Has(row, "floor") && row["floor"].Type == JTokenType.String ? row["floor"].Value<string>() : null;
-                    if (kind != "terrain" && floor != CrawlId)
+                    if (kind != "terrain" && !IsCrawlId(floor))
                         RefFloor(row["floor"], where, "floor");
                     if (kind == "detail")
                     {
@@ -774,12 +899,6 @@ namespace Gregmatics
             /// <summary>Each dug zone and everything standing in a floor's rooms.</summary>
             IEnumerable<Zone> Zones(Floor floor, int[] box)
             {
-                Street entry = null;
-                foreach (Street street in streets)
-                {
-                    if (street.Style == "entry")
-                        entry = street;
-                }
                 foreach (Room room in rooms)
                 {
                     if (room.Floor == floor.Id)
@@ -788,7 +907,7 @@ namespace Gregmatics
                 foreach (Street street in streets)
                 {
                     if (street.Floor == floor.Id)
-                        yield return new Zone(street.Label.Length > 0 ? street.Label : street.Id, street.Box, StreetLimit(street, box, entry));
+                        yield return new Zone(street.Label.Length > 0 ? street.Label : street.Id, street.Box, StreetLimit(street, box));
                 }
                 foreach (Door door in doors)
                 {
@@ -810,10 +929,16 @@ namespace Gregmatics
                     if (Array.IndexOf(lift.Floors, floor.Id) >= 0)
                         yield return new Zone(lift.Label.Length > 0 ? lift.Label : lift.Id, lift.Box, box);
                 }
-                if (floor.Id == crawlUnder)
+                foreach (CrawlSpace crawl in crawlSpaces)
                 {
+                    if (crawl.Under != floor.Id)
+                        continue;
                     foreach (Item trench in trenches)
-                        yield return new Zone(trench.Id, trench.Box, box);
+                    {
+                        CrawlSpace owner = TrenchOwner(trench);
+                        if (owner == crawl)
+                            yield return new Zone(trench.Id, trench.Box, box);
+                    }
                 }
                 var roomFloor = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (Room room in rooms)
@@ -838,15 +963,18 @@ namespace Gregmatics
                 }
             }
 
-            /// <summary>How far north a street may run.</summary>
-            int[] StreetLimit(Street street, int[] box, Street entry)
+            /// <summary>How far north a street may run. An entrance may sit north of the rim. A street in line with one may cross the rim.</summary>
+            int[] StreetLimit(Street street, int[] box)
             {
                 if (box[2] > inner[2])
                     return box;
                 if (street.Style == "entry")
                     return new[] { box[0], box[1], sheet[2], box[3] };
-                if (entry != null && street.Floor == entry.Floor && street.Box[0] >= entry.Box[0] && street.Box[1] <= entry.Box[1])
-                    return new[] { box[0], box[1], square[2], box[3] };
+                foreach (Street other in streets)
+                {
+                    if (other.Style == "entry" && street.Floor == other.Floor && street.Box[0] >= other.Box[0] && street.Box[1] <= other.Box[1])
+                        return new[] { box[0], box[1], square[2], box[3] };
+                }
                 return box;
             }
 
@@ -1173,7 +1301,17 @@ namespace Gregmatics
             public string Key;
             public string Label;
             public string Room;
+            public string Crawl;
             public int[] Box;
+        }
+
+        sealed class CrawlSpace
+        {
+            public string Id;
+            public string Name;
+            public string Under;
+            public int Low;
+            public int High;
         }
 
         sealed class Zone

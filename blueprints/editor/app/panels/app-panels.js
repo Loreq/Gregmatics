@@ -65,14 +65,29 @@
 
   /** Enable the buttons that have something to act on, and show whether the plan is unsaved. */
   function renderButtons() {
-    $("undo").disabled = !state.undo.length;
-    $("redo").disabled = !state.redo.length;
-    $("copy").disabled = !Edit.actionItems(Sel.selection()).items.length;
-    $("paste").disabled = !(state.clip && state.clip.parts && state.clip.parts.length);
+    const idle = !state.layout;
+    $("undo").disabled = idle || !state.undo.length;
+    $("redo").disabled = idle || !state.redo.length;
+    $("copy").disabled = idle || !Edit.actionItems(Sel.selection()).items.length;
+    $("paste").disabled = idle || !(state.clip && state.clip.parts && state.clip.parts.length);
     const dirty = unsaved();
     $("revert").hidden = !dirty;
     $("file-state").hidden = !dirty;
     document.title = `${dirty ? "• " : ""}Gregmatics`;
+  }
+
+  /** With no plan open, leave File → New and File → Load, and hold the rest. */
+  function setIdle(idle) {
+    document.body.classList.toggle("no-plan", idle);
+    ["menu-save", "png", "settings"].forEach((id) => {
+      const el = $(id);
+      if (el) el.disabled = idle;
+    });
+    if (!idle) return;
+    chromeKey = "";
+    $("tools").innerHTML = "";
+    $("cursor").textContent = "";
+    renderButtons();
   }
 
   /** The tool bar: one button for each tool the layer being shown has. */
@@ -150,6 +165,6 @@
   }
 
   Object.assign(App.Panels, {
-    openMenu, closeMenus, onMenuLabel, showPlanTitle, syncTier, renderButtons, showCursor, refresh,
+    openMenu, closeMenus, onMenuLabel, showPlanTitle, syncTier, renderButtons, showCursor, refresh, setIdle,
   });
 })(window.App);

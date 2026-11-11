@@ -3,15 +3,26 @@
 (function (App) {
   "use strict";
 
-  const { Core, $, state, L, unsaved, status, History, Files, Save, Bounds, Panels } = App;
+  const { Core, CATALOG, $, state, L, unsaved, status, History, Files, Save, Bounds, Panels } = App;
 
-  const FIRST_FLOOR = { id: "main", name: "Floor 1", pen: "#282C32" };
+  const FIRST_FLOOR = { id: "main", name: "Floor", pen: "#282C32" };
+  const NEW_TIER = "Stone";
   // The air a first floor gets when the open plan has no floor to copy: Y 69 through 73.
   const DEFAULT_Y = 69;
   const FLOOR_HEIGHT = 5;
-  // What a crawl is given where the open plan's does not say.
-  const CRAWL = { name: "Pipe crawl", below: 4, height: 3 };
-  const MIN_CRAWL = 2;
+  // A new plan's bounds: 256 blocks on a side, from 0 through 255. Sixteen chunks.
+  const DEFAULT_SIDE = 256;
+  const STARTER_COLUMNS = "ABCDEFGHIJKLMNOP";
+  const STARTER_GROUND = 80;
+  const STARTER_COLORS = {
+    rock: "#E4DED4", corridor: "#DCE7F2", entry: "#E8C48E", door: "#FFFDF8",
+    trench: "#E8D6AA", stair: "#F6ECD6", well: "#D6EAF4",
+  };
+  const GROUP_COLORS = {
+    ore: "#B08056", form: "#6284B2", chem: "#509662", elec: "#8A68BE", power: "#CE9628",
+    store: "#808892", farm: "#6E9E46", util: "#6E707C", space: "#4088B0",
+  };
+  const GROUP_FALLBACK = "#808892";
 
   // ---- an empty plan ----
 
@@ -28,13 +39,33 @@
     };
   }
 
-  /** A pipe crawl under the first floor, as deep and as tall as the open plan's. */
-  function crawlUnder(crawl) {
+  /** The site and palette a first plan starts from, when no plan is open to copy. */
+  function starter() {
+    const groups = {};
+    Object.keys(CATALOG.groups || {}).forEach((id) => {
+      groups[id] = GROUP_COLORS[id] || GROUP_FALLBACK;
+    });
+    const row = [];
+    for (let i = 0; i < STARTER_COLUMNS.length; i += 1) row.push(STARTER_GROUND);
+    const terrain = [];
+    for (let i = 0; i < STARTER_COLUMNS.length; i += 1) terrain.push(row.slice());
+    const edge = DEFAULT_SIDE - 1;
     return {
-      name: crawl.name || CRAWL.name,
-      under: FIRST_FLOOR.id,
-      below: Math.max(MIN_CRAWL, crawl.below || CRAWL.below),
-      height: Math.max(MIN_CRAWL, crawl.height || CRAWL.height),
+      site: {
+        square: { x0: 0, x1: edge, z0: 0, z1: edge },
+        sheet: { x0: 0, x1: edge, z0: 0, z1: edge },
+        rim: 1,
+        columns: STARTER_COLUMNS,
+        dirty: [],
+        cover: 5,
+        tier: NEW_TIER,
+        terrain,
+      },
+      palette: { ...STARTER_COLORS, groups },
+      floors: [{ id: FIRST_FLOOR.id, name: FIRST_FLOOR.name, slab: DEFAULT_Y - 1, height: FLOOR_HEIGHT, pen: FIRST_FLOOR.pen }],
+      rooms: [], streets: [], doors: [], stairs: [], shafts: [], lifts: [],
+      trenches: [], pads: [], walls: [], marks: [],
+      callouts: [], cuts: [], sheets: [],
     };
   }
 
@@ -44,9 +75,9 @@
     const palette = Core.clone(layout.palette);
     const floor = firstFloor(layout);
     if (name) site.name = name;
-    if (box && !Core.sameBox(box, Core.inner({ site }))) Object.assign(floor, box);
-    site.crawl = crawlUnder(site.crawl || {});
-    return {
+    site.tier = NEW_TIER;
+    Core.placeSite(site, box);
+    const plan = {
       site,
       palette,
       floors: [floor],
@@ -54,10 +85,12 @@
       trenches: [], pads: [], walls: [], marks: [],
       callouts: [], cuts: [],
       sheets: [{
-        id: "01-main", kind: "overview", title: floor.name, floor: FIRST_FLOOR.id,
+        id: "01-main", kind: "overview", title: floor.name, floor: floor.id,
         blurb: `${floor.name}, slab Y=${floor.slab}.`, notes: [],
       }],
     };
+    delete site.crawl;
+    return plan;
   }
 
   // ---- making it the open plan ----
@@ -68,6 +101,7 @@
     const api = Files.desktopApi();
     if (unsaved()) await Save.save({ auto: true });
     if (!api) {
+      Panels.setIdle(false);
       state.planFile = Files.previewFileName(name, false);
       if (!state.planFiles.includes(state.planFile)) state.planFiles.push(state.planFile);
       History.load(layoutObject, `Created ${name}.`, text);
@@ -91,11 +125,11 @@
 
   // ---- the dialog ----
 
-  /** What the footprint picture starts from: everything the open plan's main floor may cover. */
-  function startingSpec(layout) {
-    const floor = Core.mainFloor(layout) || layout.floors[0];
-    const limit = floor ? Bounds.floorSpec(floor).limit : Core.inner(layout);
-    return { limit, box: { ...limit } };
+  /** What the footprint picture starts from: a 256 by 256 square at the origin. */
+  function startingSpec() {
+    const edge = DEFAULT_SIDE - 1;
+    const box = { x0: 0, x1: edge, z0: 0, z1: edge };
+    return { limit: box, box: { ...box } };
   }
 
   /** Show the file name the typed plan name would get. */
@@ -113,35 +147,39 @@
       return;
     }
     const next = editor.read();
-    const probe = blankPlan(layout, name, { x0: next.x0, x1: next.x1, z0: next.z0, z1: next.z1 });
-    const made = probe.floors[0];
-    const problem = Bounds.worldProblem(next) || Core.spanProblem(probe, made, Core.floorBox(probe, made));
+    const box = { x0: next.x0, x1: next.x1, z0: next.z0, z1: next.z1 };
+    const problem = Bounds.worldProblem(next) || Core.siteProblem(layout.site, box);
     if (problem) {
       error.textContent = problem;
       return;
     }
     $("new-dialog").close();
-    createPlanFile(name, probe);
+    createPlanFile(name, blankPlan(layout, name, box));
   }
 
-  /** Open the dialog, empty, with the footprint picture showing the whole site. */
+  /** Open the dialog, empty, with the footprint picture at 256 by 256. */
   async function openDialog() {
-    await Files.refreshPlanFiles();
-    const layout = L();
     const dialog = $("new-dialog");
-    const error = $("new-error");
-    error.textContent = "";
-    $("new-name").value = "";
-    $("new-name").oninput = paintFile;
-    paintFile();
-    const editor = Bounds.mount($("new-bounds"), { ...startingSpec(layout), onCommit: () => { error.textContent = ""; } });
-    $("new-form").onsubmit = (event) => {
-      event.preventDefault();
-      submit(layout, editor);
-    };
-    $("new-close").onclick = () => dialog.close();
-    dialog.showModal();
-    $("new-name").focus();
+    if (dialog.open) return;
+    try {
+      await Files.refreshPlanFiles();
+      const layout = L() || starter();
+      const error = $("new-error");
+      error.textContent = "";
+      $("new-name").value = "";
+      $("new-name").oninput = paintFile;
+      paintFile();
+      const editor = Bounds.mount($("new-bounds"), { ...startingSpec(), onCommit: () => { error.textContent = ""; } });
+      $("new-form").onsubmit = (event) => {
+        event.preventDefault();
+        submit(layout, editor);
+      };
+      $("new-close").onclick = () => dialog.close();
+      dialog.showModal();
+      $("new-name").focus();
+    } catch (err) {
+      status(err && err.message ? err.message : "Could not open New.", true);
+    }
   }
 
   /** File → New. */

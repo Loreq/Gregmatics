@@ -43,15 +43,8 @@ namespace Gregmatics
             {
                 return Program.Fail(ex.Message, test, log);
             }
-            string text;
-            try
-            {
-                text = Plans.ReadText();
-            }
-            catch (LayoutException ex)
-            {
-                return Program.Fail(ex.Message, test, log);
-            }
+            string path = Plans.OpenLast();
+            string text = path == null ? null : Plans.ReadGregmatic(path);
             string script;
             try
             {
@@ -301,7 +294,10 @@ namespace Gregmatics
         /// <summary>The open plan's text, with the fingerprint a draft is matched against.</summary>
         JObject ReadLayout()
         {
-            string text = Plans.ReadText();
+            string path = Plans.OpenLast();
+            if (path == null)
+                return new JObject { ["ok"] = true, ["empty"] = true };
+            string text = Plans.ReadGregmatic(path);
             return new JObject
             {
                 ["ok"] = true,
@@ -327,7 +323,19 @@ namespace Gregmatics
         /// <summary>Where the plans are, which one is open, and whether edits save themselves.</summary>
         JObject PlanInfo()
         {
-            Plans.EnsureCurrent();
+            if (Plans.OpenLast() == null)
+            {
+                return new JObject
+                {
+                    ["ok"] = true,
+                    ["empty"] = true,
+                    ["folder"] = Plans.PlanFolder(),
+                    ["current"] = "",
+                    ["name"] = "",
+                    ["plans"] = new JArray(),
+                    ["autosave"] = Plans.Autosave(),
+                };
+            }
             return new JObject
             {
                 ["ok"] = true,

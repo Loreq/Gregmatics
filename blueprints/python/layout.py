@@ -130,12 +130,27 @@ def _settings() -> dict:
     return {"folder": folder, "current": current, "autosave": bool(stored.get("autosave", True))}
 
 
-def _write_settings(folder: str, current: str, autosave: bool | None = None) -> None:
-    """Store the plan folder and the open plan. Autosave keeps its value unless one is given."""
+def _stored_edited() -> str:
+    """The file name of the plan last saved, or empty when none has been."""
+    name = _stored_settings().get("edited") or ""
+    if not _filled(name):
+        return ""
+    name = Path(name).name
+    if not name.lower().endswith(PLAN_SUFFIX):
+        name += PLAN_SUFFIX
+    return name
+
+
+def _write_settings(folder: str, current: str, autosave: bool | None = None, edited: str | None = None) -> None:
+    """Store the plan folder, the open plan, and the plan last saved. Autosave and the last save keep their values unless one is given."""
     if autosave is None:
         autosave = _settings()["autosave"]
-    text = dumps({"folder": folder, "current": Path(current).name, "autosave": bool(autosave)}) + "\n"
-    save_text(home_dir() / SETTINGS_NAME, text)
+    if edited is None:
+        edited = _stored_edited()
+    body = {"folder": folder, "current": Path(current).name, "autosave": bool(autosave)}
+    if edited:
+        body["edited"] = Path(edited).name
+    save_text(home_dir() / SETTINGS_NAME, dumps(body) + "\n")
 
 
 def autosave() -> bool:
@@ -192,10 +207,11 @@ def read_gregmatic(path: Path) -> str:
 
 
 def write_gregmatic(path: Path, text: str) -> None:
-    """Write one plan. A file already holding the same text is left alone."""
+    """Write one plan, and remember it as the one last edited. A file already holding the same text is left alone."""
     text = ended(text)
     if not _holds(path, text):
         save_text(path, text)
+    _write_settings(str(path.parent), path.name, edited=path.name)
 
 
 def _holds(path: Path, text: str) -> bool:
@@ -266,7 +282,10 @@ def rename_current(name: str) -> str:
     if dest.exists():
         raise LayoutError(f"{filename} already exists")
     src.replace(dest)
-    _write_settings(str(plan_folder()), dest.name)
+    edited = _stored_edited()
+    if edited.lower() == src.name.lower():
+        edited = dest.name
+    _write_settings(str(plan_folder()), dest.name, edited=edited)
     return dest.name
 
 
@@ -280,16 +299,32 @@ def open_plan(name: str) -> str:
 
 
 def ensure_current() -> Path:
-    """The open plan. The folder's files are the only place a plan is stored."""
-    path = current_file()
-    if path.is_file():
-        return path
+    """The plan last saved, or the newest file when that one is gone."""
+    chosen = _open_last()
+    if chosen is None:
+        raise LayoutError(f"No plan in {plan_folder()}")
+    return chosen
+
+
+def _open_last() -> Path | None:
+    """The plan to open, or None when the folder has no plan. The one last saved wins."""
     folder = plan_folder()
+    edited = _stored_edited()
+    if edited:
+        path = folder / edited
+        if path.is_file():
+            if current_file().name.lower() != edited.lower():
+                _write_settings(str(folder), edited, edited=edited)
+            return path
+    current = current_file()
+    if current.is_file():
+        return current
     found = _gregmatic_files(folder)
     if not found:
-        raise LayoutError(f"No plan in {folder}")
-    _write_settings(str(folder), found[0].name)
-    return found[0]
+        return None
+    newest = max(found, key=lambda path: path.stat().st_mtime)
+    _write_settings(str(folder), newest.name, edited=newest.name)
+    return newest
 
 
 def move_plans(dest: Path) -> str:
@@ -437,9 +472,30 @@ def _ref(value, table: dict, where: str, key: str):
 
 # --- the site, the palette, and the floors ---
 
+def chunk_parts(name: str) -> tuple | None:
+    """The column letters and row of a chunk name such as E6 or AA12, or None."""
+    if not isinstance(name, str) or len(name) < 2:
+        return None
+    split = 0
+    while split < len(name) and "A" <= name[split] <= "Z":
+        split += 1
+    if split == 0 or split == len(name) or not name[split:].isdigit():
+        return None
+    return name[:split], int(name[split:])
+
+
+def _columns(value) -> tuple:
+    """The chunk column names. A string is one letter each; a list names them, such as AA."""
+    if isinstance(value, str) and value:
+        return tuple(value)
+    if isinstance(value, list) and value:
+        return tuple(_str(item, "site", "columns") for item in value)
+    raise LayoutError("site.columns should name the chunk columns")
+
+
 def _site(site) -> dict:
     """The working square, the sheet's edges, the chunk grid, and the ground estimate."""
-    _fields(site, "site", ("square", "sheet", "rim", "columns", "dirty", "cover", "terrain", "crawl"), ("tier", "name"))
+    _fields(site, "site", ("square", "sheet", "rim", "columns", "dirty", "cover", "terrain"), ("tier", "name", "crawl", "crawls"))
     if "tier" in site:
         _choice(site["tier"], "site", "tier", SELECTABLE)
     if "name" in site:
@@ -449,7 +505,7 @@ def _site(site) -> dict:
     square = _box(site["square"], "site.square")
     sheet = _box(site["sheet"], "site.sheet")
     rim = _int(site["rim"], "site", "rim", low=0)
-    columns = _str(site["columns"], "site", "columns")
+    columns = _columns(site["columns"])
     terrain = _terrain(site["terrain"], columns)
     dirty = _dirty(site["dirty"], columns, len(terrain))
     cover = _int(site["cover"], "site", "cover", low=0)
@@ -461,7 +517,7 @@ def _site(site) -> dict:
     }
 
 
-def _terrain(terrain, columns: str) -> list:
+def _terrain(terrain, columns: tuple) -> list:
     """The ground estimate: one row per chunk row, one Y per chunk column."""
     if not isinstance(terrain, list) or not terrain:
         raise LayoutError("site.terrain should be a list of rows")
@@ -473,7 +529,7 @@ def _terrain(terrain, columns: str) -> list:
     return [list(row) for row in terrain]
 
 
-def _dirty(names, columns: str, rows: int) -> set:
+def _dirty(names, columns: tuple, rows: int) -> set:
     """The chunks that may hold polluting machines."""
     dirty = set()
     for name in names:
@@ -483,10 +539,10 @@ def _dirty(names, columns: str, rows: int) -> set:
     return dirty
 
 
-def _is_chunk(name, columns: str, rows: int) -> bool:
-    """Whether a name is a column letter and a row number that are both on the chunk grid."""
-    return (isinstance(name, str) and len(name) >= 2 and name[0] in columns and name[1:].isdigit()
-            and 1 <= int(name[1:]) <= rows)
+def _is_chunk(name, columns: tuple, rows: int) -> bool:
+    """Whether a name is a column and a row number that are both on the chunk grid."""
+    parts = chunk_parts(name) if isinstance(name, str) else None
+    return parts is not None and parts[0] in columns and 1 <= parts[1] <= rows
 
 
 def _palette(palette) -> dict:
@@ -532,23 +588,57 @@ def _own_span(row: dict, where: str) -> tuple:
     return _box(row, where)
 
 
-def _crawl(crawl, floors: list, floor_by_id: dict) -> dict:
-    """The pipe crawl: the floor it hangs under, and its band of air."""
-    _fields(crawl, "site.crawl", ("name", "under", "below", "height"))
-    under = _ref(crawl["under"], floor_by_id, "site.crawl", "under")
-    top = under.slab - _int(crawl["below"], "site.crawl", "below", low=1)
-    air = (top - _int(crawl["height"], "site.crawl", "height", low=2) + 1, top)
-    _check_air(floors, air)
-    return {"CRAWL": {"name": crawl["name"], "under": under.id, "air": air, "walk": air[0] + 1}}
+def _crawls(site, floors: list, floor_by_id: dict) -> list:
+    """Every crawlspace. site.crawl is one; site.crawls is a list. A plan has one of those, or neither."""
+    if "crawl" in site and "crawls" in site:
+        raise LayoutError("site: a plan has crawl or crawls, not both")
+    if "crawls" in site:
+        rows = site["crawls"]
+        if not isinstance(rows, list):
+            raise LayoutError("site.crawls should be a list")
+        pairs = [(f"site.crawls.{i}", row) for i, row in enumerate(rows)]
+    elif "crawl" in site:
+        pairs = [("site.crawl", site["crawl"])]
+    else:
+        pairs = []
+    crawls = []
+    used = set()
+    for where, row in pairs:
+        crawl = _one_crawl(row, where, floor_by_id, used)
+        used.add(crawl["id"])
+        crawls.append(crawl)
+    _check_air(floors, [crawl["air"] for crawl in crawls])
+    return crawls
 
 
-def _check_air(floors: list, crawl_air: tuple) -> None:
+def _one_crawl(row, where: str, floor_by_id: dict, used: set) -> dict:
+    """One crawlspace: the floor it hangs under, and its band of air."""
+    _fields(row, where, ("name", "under", "below", "height"), ("id",))
+    under = _ref(row["under"], floor_by_id, where, "under")
+    top = under.slab - _int(row["below"], where, "below", low=1)
+    air = (top - _int(row["height"], where, "height", low=2) + 1, top)
+    if "id" in row:
+        ident = _ident(row["id"], where)
+    elif not used:
+        ident = CRAWL_ID
+    else:
+        number = 2
+        while f"{CRAWL_ID}-{number}" in used:
+            number += 1
+        ident = f"{CRAWL_ID}-{number}"
+    if ident in used:
+        raise LayoutError(f"{where}: id {ident!r} is already a crawlspace")
+    return {"id": ident, "name": row["name"], "under": under.id, "air": air, "walk": air[0] + 1}
+
+
+def _check_air(floors: list, crawl_airs: list) -> None:
     """Every band of air stays inside the world."""
     for floor in floors:
         if floor.air[0] < WORLD_BOTTOM or floor.air[1] > WORLD_TOP:
             raise LayoutError(f"{floor.name}: air stays inside Y 0 through 255")
-    if crawl_air[0] < WORLD_BOTTOM or crawl_air[1] > WORLD_TOP:
-        raise LayoutError("site.crawl: air stays inside Y 0 through 255")
+    for air in crawl_airs:
+        if air[0] < WORLD_BOTTOM or air[1] > WORLD_TOP:
+            raise LayoutError("site.crawl: air stays inside Y 0 through 255")
 
 
 # --- zones: what is dug ---
@@ -601,12 +691,9 @@ def _street(row, where: str, floors: dict) -> Street:
                   label_vertical=_flag(row, where, "label_vertical"))
 
 
-def _entrance(streets: list) -> Street:
-    """The one street that is the way in."""
-    entries = [street for street in streets if street.style == "entry"]
-    if len(entries) != 1:
-        raise LayoutError(f"streets: there should be exactly one entrance (style \"entry\"), not {len(entries)}")
-    return entries[0]
+def _entrance(streets: list) -> Street | None:
+    """The first entrance street, or None when no street is the way in."""
+    return next((street for street in streets if street.style == "entry"), None)
 
 
 def _doors(rows, floors: dict) -> list:
@@ -687,18 +774,21 @@ def _lift(row, where: str, floors: dict) -> Lift:
                 floors=tuple(f.id for f in stops), label=_label(row, where))
 
 
-def _trenches(rows) -> list:
+def _trenches(rows, crawl_ids: set) -> list:
     """The runs of the pipe crawl."""
-    trenches = [_trench(row, where) for where, row in _each(rows, "trenches")]
+    trenches = [_trench(row, where, crawl_ids) for where, row in _each(rows, "trenches")]
     _unique(trenches, "trenches", "id")
     return trenches
 
 
-def _trench(row, where: str) -> Trench:
+def _trench(row, where: str, crawl_ids: set) -> Trench:
     """One trench."""
-    _fields(row, where, ("id", *FOOTPRINT))
+    _fields(row, where, ("id", *FOOTPRINT), ("crawl",))
     x0, x1, z0, z1 = _box(row, where)
-    return Trench(id=_ident(row["id"], where), x0=x0, x1=x1, z0=z0, z1=z1)
+    named = _ident(row["crawl"], where) if "crawl" in row else ""
+    if named and named not in crawl_ids:
+        raise LayoutError(f"{where}: {named} is not a crawlspace")
+    return Trench(id=_ident(row["id"], where), x0=x0, x1=x1, z0=z0, z1=z1, crawl=named)
 
 
 # --- contents: what stands in a room ---
@@ -791,18 +881,18 @@ def _mark(row, where: str, rooms: dict) -> Mark:
 
 # --- sheets: what is drawn ---
 
-def _sheets(rows, floors: dict) -> list:
+def _sheets(rows, floors: dict, crawl_ids: set) -> list:
     """The sheets, as the plain records the plan gives."""
-    sheets = [_sheet(row, where, floors) for where, row in _each(rows, "sheets")]
+    sheets = [_sheet(row, where, floors, crawl_ids) for where, row in _each(rows, "sheets")]
     _unique(sheets, "sheets", "id")
     return sheets
 
 
-def _sheet(row, where: str, floors: dict) -> dict:
+def _sheet(row, where: str, floors: dict, crawl_ids: set) -> dict:
     """One sheet. Only what the drawing relies on is checked."""
     _fields(row, where, ("id", "kind", "title", "blurb"), ("floor", "region", "scale", "cuts", "profiles", "notes"))
     kind = _choice(row["kind"], where, "kind", SHEET_KINDS)
-    if kind != "terrain" and row.get("floor") != CRAWL_ID:
+    if kind != "terrain" and row.get("floor") not in crawl_ids:
         _ref(row.get("floor"), floors, where, "floor")
     if kind == "detail":
         _check_detail(row, where)
@@ -874,13 +964,15 @@ def _contains(box: Box, limit: Box) -> bool:
     return box[0] >= limit[0] and box[1] <= limit[1] and box[2] >= limit[2] and box[3] <= limit[3]
 
 
-def _street_limit(street: Street, box: Box, plan: dict, entry: Street | None) -> Box:
-    """How far north a street may run. The entrance mouth may sit north of the rim while its floor reaches that rim."""
+def _street_limit(street: Street, box: Box, plan: dict) -> Box:
+    """How far north a street may run. An entrance may sit north of the rim. A street in line with one may cross the rim."""
     if box[2] > plan["INNER"][2]:
         return box
     if street.style == "entry":
         return (box[0], box[1], plan["SHEET"][2], box[3])
-    if entry and street.floor == entry.floor and street.x0 >= entry.x0 and street.x1 <= entry.x1:
+    lined = any(other.style == "entry" and other.floor == street.floor and street.x0 >= other.x0 and street.x1 <= other.x1
+                for other in plan["STREETS"])
+    if lined:
         return (box[0], box[1], plan["SQUARE"][2], box[3])
     return box
 
@@ -897,13 +989,12 @@ def _check_floor_span(floor: Floor, floors: list, inner: Box) -> None:
 
 def _zones_on(floor: Floor, box: Box, plan: dict) -> Iterator[tuple]:
     """(label, footprint, limit) for each dug zone of a floor."""
-    entry = next((street for street in plan["STREETS"] if street.style == "entry"), None)
     for room in plan["ROOMS"]:
         if room.floor == floor.id:
             yield room.name, room.box, box
     for street in plan["STREETS"]:
         if street.floor == floor.id:
-            yield street.label or street.id, street.box, _street_limit(street, box, plan, entry)
+            yield street.label or street.id, street.box, _street_limit(street, box, plan)
     for door in plan["DOORS"]:
         if door.floor == floor.id:
             yield door.id, door.box, box
@@ -916,9 +1007,12 @@ def _zones_on(floor: Floor, box: Box, plan: dict) -> Iterator[tuple]:
     for lift in plan["LIFTS"]:
         if floor.id in lift.floors:
             yield lift.label or lift.id, lift.box, box
-    if floor.id == plan["CRAWL"]["under"]:
+    for crawl in plan["CRAWLS"]:
+        if floor.id != crawl["under"]:
+            continue
         for trench in plan["TRENCHES"]:
-            yield trench.id, trench.box, box
+            if trench_owner(trench, plan["CRAWLS"]) is crawl:
+                yield trench.id, trench.box, box
 
 
 def _contents_on(floor: Floor, box: Box, plan: dict) -> Iterator[tuple]:
@@ -956,26 +1050,43 @@ def _json(text: str):
         raise LayoutError(f"The plan is not valid JSON: line {err.lineno}, column {err.colno}: {err.msg}") from None
 
 
+def trench_owner(trench, crawls: list):
+    """The crawlspace a trench is dug in, or None."""
+    if trench.crawl:
+        return next((crawl for crawl in crawls if crawl["id"] == trench.crawl), None)
+    if len(crawls) == 1:
+        return crawls[0]
+    return next((crawl for crawl in crawls if crawl["id"] == CRAWL_ID), None)
+
+
+def crawl_under(floor_id: str, crawls: list):
+    """The crawlspace hanging under a floor, or None."""
+    return next((crawl for crawl in crawls if crawl["under"] == floor_id), None)
+
+
 def parse(text: str) -> dict:
     """Every record of a plan, checked, under the names this module exports."""
     data = _json(text)
     _fields(data, "plan", TOP_LEVEL)
     plan = {**_site(data["site"]), **_palette(data["palette"]), **_floors(data["floors"])}
     floors = plan["FLOOR"]
-    plan.update(_crawl(data["site"]["crawl"], plan["FLOORS"], floors))
+    crawls = _crawls(data["site"], plan["FLOORS"], floors)
+    plan["CRAWLS"] = crawls
+    crawl_ids = {crawl["id"] for crawl in crawls}
     plan["ROOMS"] = _rooms(data["rooms"], floors)
     rooms = {room.id: room for room in plan["ROOMS"]}
     plan["STREETS"] = _streets(data["streets"], floors)
-    plan["ENTRANCE_FLOOR"] = _entrance(plan["STREETS"]).floor
+    entry = _entrance(plan["STREETS"])
+    plan["ENTRANCE_FLOOR"] = entry.floor if entry else None
     plan["DOORS"] = _doors(data["doors"], floors)
     plan["STAIRS"] = _stairs(data["stairs"], floors)
     plan["SHAFTS"] = _shafts(data["shafts"], rooms)
     plan["LIFTS"] = _lifts(data["lifts"], floors)
-    plan["TRENCHES"] = _trenches(data["trenches"])
+    plan["TRENCHES"] = _trenches(data["trenches"], crawl_ids)
     plan["PADS"] = _pads(data["pads"], rooms)
     plan["WALLS"] = _walls(data["walls"], rooms)
     plan["MARKS"] = _marks(data["marks"], rooms)
-    plan["SHEETS"] = _sheets(data["sheets"], floors)
+    plan["SHEETS"] = _sheets(data["sheets"], floors, crawl_ids)
     plan["CALLOUTS"] = _callouts(data["callouts"])
     plan["CUTS"] = _cuts(data["cuts"])
     _check_footprints(plan)
@@ -998,7 +1109,7 @@ PALETTE = _P["PALETTE"]
 GROUP_COLORS = _P["GROUP_COLORS"]
 FLOORS = _P["FLOORS"]
 FLOOR = _P["FLOOR"]
-CRAWL = _P["CRAWL"]
+CRAWLS = _P["CRAWLS"]
 ENTRANCE_FLOOR = _P["ENTRANCE_FLOOR"]
 ROOMS = _P["ROOMS"]
 STREETS = _P["STREETS"]
@@ -1015,9 +1126,20 @@ CUTS = _P["CUTS"]
 SHEETS = _P["SHEETS"]
 
 
+def shown_floor():
+    """The entrance's floor, or the main floor when no street is the entrance."""
+    if ENTRANCE_FLOOR and ENTRANCE_FLOOR in FLOOR:
+        return FLOOR[ENTRANCE_FLOOR]
+    for floor in FLOORS:
+        if floor.id == "main":
+            return floor
+    return FLOORS[0]
+
+
 def sheet_level(sheet: dict) -> tuple:
     """(floor id, or "basement" for the pipe crawl; the Y the plan is cut at) for a sheet."""
-    if sheet.get("floor") == CRAWL_ID:
-        return "basement", CRAWL["walk"]
+    for crawl in CRAWLS:
+        if sheet.get("floor") == crawl["id"]:
+            return "basement", crawl["walk"]
     floor = FLOOR[sheet["floor"]]
     return floor.id, floor.walk

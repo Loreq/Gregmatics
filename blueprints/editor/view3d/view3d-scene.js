@@ -444,24 +444,28 @@
 
     /** The pipe crawl: each trench as a box, and a low run under every street that keeps one. */
     buildCrawl() {
-      const band = Core.crawlAir(this.layout);
-      if (!band || !this.visible(Core.CRAWL)) return;
       const trench = hex(this.pal.trench, 1);
-      for (const item of this.layout.trenches) {
-        this.solid.box(item.x0, band[0], item.z0, item.x1 + 1, band[1] + 1, item.z1 + 1, trench);
-        this.grow(item.x0, band[0], item.z0, item.x1 + 1, band[1] + 1, item.z1 + 1);
-        this.watch(pretty(item.id), item.x0, band[0], item.z0, item.x1 + 1, band[1] + 1, item.z1 + 1, false, trench);
-      }
-      const y = band[0] + 0.25;
-      const laid = new Set();
-      for (const street of this.layout.streets) {
-        if (street.floor !== this.layout.site.crawl.under || street.trench === false) continue;
-        eachCell(street.x0, street.x1, street.z0, street.z1, (x, z) => {
-          const id = keyOf(x, z);
-          if (laid.has(id)) return;
-          laid.add(id);
-          this.solid.box(x + 0.12, y, z + 0.12, x + 0.88, y + 0.22, z + 0.88, shade(trench, 0.85));
-        });
+      for (const crawl of Core.crawlRecords(this.layout)) {
+        const layer = Core.crawlLayerId(crawl);
+        const band = Core.crawlAir(this.layout, crawl);
+        if (!band || !this.visible(layer)) continue;
+        for (const item of this.layout.trenches) {
+          if (Core.trenchCrawl(this.layout, item) !== crawl) continue;
+          this.solid.box(item.x0, band[0], item.z0, item.x1 + 1, band[1] + 1, item.z1 + 1, trench);
+          this.grow(item.x0, band[0], item.z0, item.x1 + 1, band[1] + 1, item.z1 + 1);
+          this.watch(pretty(item.id), item.x0, band[0], item.z0, item.x1 + 1, band[1] + 1, item.z1 + 1, false, trench);
+        }
+        const y = band[0] + 0.25;
+        const laid = new Set();
+        for (const street of this.layout.streets) {
+          if (street.floor !== crawl.under || street.trench === false) continue;
+          eachCell(street.x0, street.x1, street.z0, street.z1, (x, z) => {
+            const id = keyOf(x, z);
+            if (laid.has(id)) return;
+            laid.add(id);
+            this.solid.box(x + 0.12, y, z + 0.12, x + 0.88, y + 0.22, z + 0.88, shade(trench, 0.85));
+          });
+        }
       }
     }
 

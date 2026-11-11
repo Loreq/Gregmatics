@@ -6,7 +6,7 @@
   "use strict";
 
   const {
-    Core, CRAWL, COLORS, canvas, ctx, state, L, layerFloor, status,
+    Core, COLORS, canvas, ctx, state, L, layerFloor, status,
     View, PaintZones, PaintContents, Overlay, Draw, Files,
   } = App;
 
@@ -159,7 +159,8 @@
     if (Core.sameBox(box, Core.inner(layout))) return;
     const hole = View.rectOf(box, v);
     shadeAround(g, View.rectOf(layout.site.sheet, v), hole);
-    const floor = layerFloor() || Core.floorById(layout, layout.site.crawl.under);
+    const crawl = Core.crawlByLayer(layout, state.layer);
+    const floor = layerFloor() || (crawl && Core.floorById(layout, crawl.under));
     g.setLineDash([]);
     g.lineWidth = 3;
     g.strokeStyle = SPAN_EDGE;
@@ -221,7 +222,7 @@
     const s = layout.site.sheet;
     const sc = v.scale;
     const [ox, oz] = Core.chunkOrigin(layout);
-    const cols = layout.site.columns;
+    const cols = Core.columnList(layout.site.columns);
     for (let c = 0; c < cols.length; c += 1) {
       const x0 = Math.max((ox + c) * CHUNK, s.x0);
       const x1 = Math.min((ox + c) * CHUNK + 15, s.x1);
@@ -260,7 +261,7 @@
     if (state.show.others) PaintZones.ghosts(g, v);
     for (const item of items) PaintZones.zone(g, v, item);
     if (v.scale >= GRID_FROM) PaintZones.cellGrid(g, v, items);
-    if (showContents() && state.layer !== CRAWL) PaintContents.paint(g, v);
+    if (showContents() && !Core.isCrawlLayer(L(), state.layer)) PaintContents.paint(g, v);
     for (const item of items) PaintZones.label(g, v, item);
     paintRulers(g, v, all);
     g.restore();

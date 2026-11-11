@@ -3,7 +3,7 @@
 (function (App) {
   "use strict";
 
-  const { CRAWL, state, status, Panels } = App;
+  const { Core, state, status, Panels } = App;
 
   /** An icon as SVG markup, from the paths inside it. */
   function icon(body) {
@@ -56,7 +56,7 @@
   function available(id) {
     const tool = byId(id);
     if (id === "select") return true;
-    return state.layer === CRAWL ? Boolean(tool.crawl) : !tool.crawl;
+    return Core.isCrawlLayer(state.layout, state.layer) ? Boolean(tool.crawl) : !tool.crawl;
   }
 
   /** Pick up a tool. Anything half done with the last one is dropped. `quiet` leaves the status bar and panels alone. */

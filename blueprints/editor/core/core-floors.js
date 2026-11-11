@@ -12,8 +12,14 @@
   const MIN_ROCK = 2;
   // The Minecraft 1.7.10 world.
   const WORLD_TOP = 255;
-  const CRAWL_NAME = "Pipe crawl";
+  const FLOOR_NAME = "Floor";
+  const CRAWL_NAME = "Crawlspace";
+  // A crawlspace made with a new floor: solid blocks under that floor, then this much air.
+  const NEW_CRAWL_BELOW = 4;
+  const NEW_CRAWL_HEIGHT = 3;
   const PAST_LIMIT = "That stack reaches past the build limit, Y 255.";
+  const WORLD_EDGE = 30000000;
+  const GROUND_FALLBACK = 80;
 
   // ---- air bands ----
 
@@ -33,23 +39,143 @@
     return [top - crawl.height + 1, top];
   }
 
-  /** The pipe crawl's air as [low Y, high Y], or null when the floor it hangs under is gone. */
-  function crawlAir(layout) {
-    const crawl = layout.site.crawl;
+  /** The crawlspaces on a plan. One stored as site.crawl counts as a list of one. */
+  function crawlRecords(layout) {
+    const site = layout && layout.site;
+    if (!site) return [];
+    if (Array.isArray(site.crawls)) return site.crawls;
+    return site.crawl ? [site.crawl] : [];
+  }
+
+  /** The id a crawlspace has in the floor stack. An old one with no id is "crawl". */
+  function crawlLayerId(crawl) {
+    return crawl && crawl.id ? crawl.id : CRAWL;
+  }
+
+  /** The crawlspace shown as this layer, or null. */
+  function crawlByLayer(layout, id) {
+    return crawlRecords(layout).find((crawl) => crawlLayerId(crawl) === id) || null;
+  }
+
+  /** Whether this layer is a crawlspace. */
+  function isCrawlLayer(layout, id) {
+    return Boolean(crawlByLayer(layout, id));
+  }
+
+  /** An id for a new crawlspace that no floor or crawlspace has. */
+  function freshCrawlId(layout) {
+    const taken = new Set(crawlRecords(layout).map(crawlLayerId));
+    for (const floor of layout.floors || []) taken.add(floor.id);
+    if (!taken.has(CRAWL)) return CRAWL;
+    for (let n = 2; ; n += 1) {
+      const id = `${CRAWL}-${n}`;
+      if (!taken.has(id)) return id;
+    }
+  }
+
+  /** A crawlspace under a floor, ready to store. */
+  function newCrawl(layout, floor) {
+    return {
+      id: freshCrawlId(layout),
+      name: CRAWL_NAME,
+      under: floor.id,
+      below: NEW_CRAWL_BELOW,
+      height: NEW_CRAWL_HEIGHT,
+    };
+  }
+
+  /** The crawlspace a trench belongs to. One with no crawl id stays on the only crawlspace, or on "crawl". */
+  function trenchCrawl(layout, trench) {
+    const crawls = crawlRecords(layout);
+    if (!crawls.length) return null;
+    if (trench && trench.crawl) return crawls.find((crawl) => crawlLayerId(crawl) === trench.crawl) || null;
+    if (crawls.length === 1) return crawls[0];
+    return crawls.find((crawl) => crawlLayerId(crawl) === CRAWL) || null;
+  }
+
+  /**
+   * Keep a crawlspace when the floor it hangs under leaves. Its air stays put, under the next floor
+   * above that air. With no floor above, it hangs under the highest floor that remains.
+   */
+  function rehangCrawl(layout, crawl, goneId) {
+    const air = crawlAir(layout, crawl);
+    if (!air) return;
+    const top = air[1];
+    const hosts = layout.floors.filter((floor) => floor.id !== goneId);
+    const above = hosts.filter((floor) => floor.slab > top).sort((a, b) => a.slab - b.slab)[0];
+    const host = above || hosts.slice().sort((a, b) => b.slab - a.slab)[0];
+    if (!host) return;
+    crawl.under = host.id;
+    crawl.below = Math.max(1, host.slab - top);
+  }
+
+  /** Drop a crawlspace, the trenches dug in it, and its sheet. One that remains is stored as site.crawl. */
+  function removeCrawl(layout, crawl) {
+    const id = crawlLayerId(crawl);
+    layout.trenches = layout.trenches.filter((trench) => {
+      const owner = trenchCrawl(layout, trench);
+      return !owner || crawlLayerId(owner) !== id;
+    });
+    const site = layout.site;
+    if (Array.isArray(site.crawls)) {
+      site.crawls = site.crawls.filter((item) => crawlLayerId(item) !== id);
+      if (site.crawls.length === 1) {
+        site.crawl = site.crawls[0];
+        delete site.crawls;
+      } else if (!site.crawls.length) delete site.crawls;
+    } else if (site.crawl && crawlLayerId(site.crawl) === id) delete site.crawl;
+    layout.sheets = layout.sheets.filter((sheet) => sheet.floor !== id);
+  }
+
+  /** Remember a crawlspace. The first one stays site.crawl; another joins site.crawls. */
+  function addCrawl(layout, crawl) {
+    const site = layout.site;
+    if (Array.isArray(site.crawls)) {
+      site.crawls.push(crawl);
+      return;
+    }
+    if (!site.crawl) {
+      site.crawl = crawl;
+      return;
+    }
+    site.crawls = [site.crawl, crawl];
+    delete site.crawl;
+  }
+
+  /** A crawlspace's air as [low Y, high Y], or null when its floor is gone. */
+  function crawlAir(layout, crawl) {
+    if (!crawl) return null;
     const under = floorById(layout, crawl.under);
     return under ? airUnder(under, crawl) : null;
   }
 
-  /** The name the pipe crawl goes by. */
-  function crawlName(crawl) {
-    return crawl.name || CRAWL_NAME;
+  /** The name a floor shows. A blank name is Floor. */
+  function floorName(floor) {
+    const name = floor && typeof floor.name === "string" ? floor.name.trim() : "";
+    return name || FLOOR_NAME;
   }
 
-  /** Every floor plus the pipe crawl, bottom to top. */
+  /** The name a crawlspace shows. A blank name is Crawlspace. */
+  function crawlName(crawl) {
+    const name = crawl && typeof crawl.name === "string" ? crawl.name.trim() : "";
+    return name || CRAWL_NAME;
+  }
+
+  /** One crawlspace as a band, or null when the floor it hangs under is gone. */
+  function crawlBand(layout, crawl, floors) {
+    const under = (floors || layout.floors).find((floor) => floor.id === crawl.under);
+    if (!under) return null;
+    const air = airUnder(under, crawl);
+    return { air, name: crawlName(crawl), crawl: true, rec: crawl, id: crawlLayerId(crawl) };
+  }
+
+  /** Every floor plus each crawlspace, bottom to top. */
   function layers(layout) {
-    const out = layout.floors.map((f) => ({ id: f.id, name: f.name, base: floorAir(f)[0], floor: f }));
-    const air = crawlAir(layout);
-    if (air) out.push({ id: CRAWL, name: crawlName(layout.site.crawl), base: air[0], crawl: true });
+    const out = layout.floors.map((f) => ({ id: f.id, name: floorName(f), base: floorAir(f)[0], floor: f }));
+    for (const crawl of crawlRecords(layout)) {
+      const band = crawlBand(layout, crawl);
+      if (band) out.push({ id: band.id, name: band.name, base: band.air[0], air: band.air, crawl: true, rec: crawl });
+    }
     return out.sort((a, b) => a.base - b.base);
   }
 
@@ -59,21 +185,44 @@
     return layer ? layer.name : id;
   }
 
-  /** The first two bands, bottom up, with too little rock between them, as { lower, upper, dy }, or null. */
+  /**
+   * The first two bands, bottom up, with too little rock between them, as { lower, upper, dy }, or null.
+   * Two crawlspaces are left under their floors. Checks names that meeting.
+   */
   function crowdedBands(bands) {
     for (let i = 1; i < bands.length; i += 1) {
+      if (bands[i].crawl && bands[i - 1].crawl) continue;
       const rock = bands[i].air[0] - bands[i - 1].air[1] - 1;
       if (rock < MIN_ROCK) return { lower: bands[i - 1], upper: bands[i], dy: MIN_ROCK - rock };
     }
     return null;
   }
 
-  /** What is wrong with the spacing of these floors and a crawl, or "". The crawl defaults to the plan's. */
-  function bandProblem(layout, floors, crawl) {
-    const bands = floors.map((f) => ({ air: floorAir(f), name: f.name }));
-    crawl = crawl || layout.site.crawl;
-    const under = floors.find((f) => f.id === crawl.under);
-    if (under) bands.push({ air: airUnder(under, crawl), name: crawlName(crawl) });
+  /** The upper of two crawlspaces with no floor between them, or null. Each still hangs under its own floor. */
+  function adjacentCrawls(layout) {
+    const bands = layout.floors.map((floor) => ({ air: floorAir(floor) }));
+    for (const crawl of crawlRecords(layout)) {
+      const air = crawlAir(layout, crawl);
+      if (air) bands.push({ air, crawl: true, id: crawlLayerId(crawl) });
+    }
+    bands.sort((a, b) => a.air[0] - b.air[0] || a.air[1] - b.air[1]);
+    for (let i = 1; i < bands.length; i += 1) {
+      if (bands[i].crawl && bands[i - 1].crawl) return bands[i];
+    }
+    return null;
+  }
+
+  /** What is wrong with the spacing of these floors and the crawlspaces, or "". */
+  function bandProblem(layout, floors, extraCrawl) {
+    const bands = floors.map((f) => ({ air: floorAir(f), name: floorName(f) }));
+    for (const crawl of crawlRecords(layout)) {
+      const band = crawlBand(layout, crawl, floors);
+      if (band) bands.push(band);
+    }
+    if (extraCrawl) {
+      const under = floors.find((floor) => floor.id === extraCrawl.under);
+      if (under) bands.push({ air: airUnder(under, extraCrawl), name: crawlName(extraCrawl), crawl: true });
+    }
     bands.sort((a, b) => a.air[0] - b.air[0]);
     const crowded = crowdedBands(bands);
     if (!crowded) return "";
@@ -95,14 +244,16 @@
 
   // ---- seating a new floor ----
 
-  /** Bands of air from the bottom up: each floor, the pipe crawl when it has one, and a floor still to be added. */
+  /** Bands of air from the bottom up: each floor, each crawlspace, and a floor still to be added. */
   function airBands(layout, extra) {
     const bands = layout.floors.map((floor) => ({
-      air: floorAir(floor), name: floor.name, floor, crawl: false,
+      air: floorAir(floor), name: floorName(floor), floor, crawl: false,
     }));
-    const crawl = crawlAir(layout);
-    if (crawl) bands.push({ air: crawl, name: crawlName(layout.site.crawl), crawl: true });
-    if (extra) bands.push({ air: [extra.slab + 1, extra.slab + extra.height], name: extra.name || "New floor", spec: true });
+    for (const crawl of crawlRecords(layout)) {
+      const band = crawlBand(layout, crawl);
+      if (band) bands.push(band);
+    }
+    if (extra) bands.push({ air: [extra.slab + 1, extra.slab + extra.height], name: floorName(extra), spec: true, floor: extra });
     bands.sort((a, b) => a.air[0] - b.air[0] || a.air[1] - b.air[1]);
     return bands;
   }
@@ -123,7 +274,8 @@
   function shiftBand(layout, band, dy) {
     if (!dy) return true;
     if (!band.crawl) return shiftFloorAndAbove(layout, band.floor, dy);
-    const crawl = layout.site.crawl;
+    const crawl = band.rec;
+    if (!crawl) return false;
     if (dy > 0 && crawl.below - dy >= MIN_ROCK) {
       crawl.below -= dy;
       return true;
@@ -135,25 +287,27 @@
   /** Remember where the stack sits. The function returned puts every floor and the crawl back. */
   function stackKeeper(layout) {
     const slabs = layout.floors.map((floor) => floor.slab);
-    const below = layout.site.crawl.below;
+    const crawls = crawlRecords(layout).map((crawl) => ({ crawl, below: crawl.below }));
     return () => {
       layout.floors.forEach((floor, i) => { floor.slab = slabs[i]; });
-      layout.site.crawl.below = below;
+      crawls.forEach(({ crawl, below }) => { crawl.below = below; });
     };
   }
 
-  /** Lift the upper of two crowded bands clear of the lower. Returns a problem, or "". */
+  /** Lift the upper of two crowded bands clear of the lower. A new floor does not push what is below it. */
   function liftClear(layout, spec, crowded) {
     if (crowded.upper.spec) {
-      return `${crowded.lower.name} and ${spec.name || "the new floor"} need at least 2 solid blocks between them.`;
+      return `${crowded.lower.name} and ${floorName(spec)} need at least 2 solid blocks between them.`;
     }
     return shiftBand(layout, crowded.upper, crowded.dy) ? "" : PAST_LIMIT;
   }
 
   /** The stack has room for the new floor: order the floors, unless the crawl was pushed out of the world. */
   function settleStack(layout) {
-    const crawl = crawlAir(layout);
-    if (crawl && (crawl[0] < 0 || crawl[1] > WORLD_TOP)) return "The pipe crawl would leave Y 0 through 255.";
+    for (const crawl of crawlRecords(layout)) {
+      const air = crawlAir(layout, crawl);
+      if (air && (air[0] < 0 || air[1] > WORLD_TOP)) return "A crawlspace would leave Y 0 through 255.";
+    }
     layout.floors.sort((a, b) => a.slab - b.slab);
     return "";
   }
@@ -244,8 +398,83 @@
     floor.z1 = box.z1;
   }
 
+  /** The rim a site uses. One that was never set is one block. */
+  function rimOf(site) {
+    return Number.isInteger(site.rim) ? site.rim : 1;
+  }
+
+  /** The outer square whose inside, past the rim, is this baseline. */
+  function squareAround(site, box) {
+    const rim = rimOf(site);
+    return { x0: box.x0 - rim, x1: box.x1 + rim, z0: box.z0 - rim, z1: box.z1 + rim };
+  }
+
+  /** How many chunk columns and rows a square covers, and the chunk where it starts. */
+  function chunkCount(square) {
+    return {
+      cols: (square.x1 >> 4) - (square.x0 >> 4) + 1,
+      rows: (square.z1 >> 4) - (square.z0 >> 4) + 1,
+      x0: square.x0 >> 4,
+      z0: square.z0 >> 4,
+    };
+  }
+
+  /** What is wrong with a baseline, before anything already placed is considered, or "". */
+  function siteProblem(site, box) {
+    const square = squareAround(site, box);
+    const edges = [square.x0, square.x1, square.z0, square.z1, square.z0 - 1];
+    if (edges.some((n) => n < -WORLD_EDGE || n > WORLD_EDGE)) return "X and Z stay within 30,000,000 of the origin.";
+    const count = chunkCount(square);
+    if (count.cols < 1 || count.rows < 1) return "The baseline covers no chunks.";
+    return "";
+  }
+
+  /** A ground height from the old estimate where that chunk still exists, else a sample of it. */
+  function groundAt(site, col, row, origin) {
+    const oz = row - origin.z;
+    const ox = col - origin.x;
+    const line = site.terrain && oz >= 0 && oz < site.terrain.length ? site.terrain[oz] : null;
+    if (line && ox >= 0 && ox < line.length && Number.isInteger(line[ox])) return line[ox];
+    const sample = site.terrain && site.terrain[0] && site.terrain[0][0];
+    return Number.isInteger(sample) ? sample : GROUND_FALLBACK;
+  }
+
+  /**
+   * Move a site so its inside is this baseline. The square grows by the rim, and the chunk
+   * letters and ground estimate follow. Returns a problem, or "".
+   */
+  function placeSite(site, box) {
+    const problem = siteProblem(site, box);
+    if (problem) return problem;
+    const square = squareAround(site, box);
+    const count = chunkCount(square);
+    const oldOrigin = { x: site.square.x0 >> 4, z: site.square.z0 >> 4 };
+    const names = [];
+    for (let c = 0; c < count.cols; c += 1) names.push(Core.columnName(c));
+    const terrain = [];
+    for (let r = 0; r < count.rows; r += 1) {
+      const line = [];
+      for (let c = 0; c < count.cols; c += 1) line.push(groundAt(site, count.x0 + c, count.z0 + r, oldOrigin));
+      terrain.push(line);
+    }
+    const sameOrigin = oldOrigin.x === count.x0 && oldOrigin.z === count.z0;
+    const dirty = sameOrigin ? (site.dirty || []).filter((name) => {
+      const parts = Core.chunkParts(name);
+      return parts && names.indexOf(parts.letters) >= 0 && parts.row >= 1 && parts.row <= count.rows;
+    }) : [];
+    site.rim = rimOf(site);
+    site.square = square;
+    site.sheet = { x0: square.x0, x1: square.x1, z0: square.z0 - 1, z1: square.z1 };
+    site.columns = names.every((name) => name.length === 1) ? names.join("") : names;
+    site.terrain = terrain;
+    site.dirty = dirty;
+    return "";
+  }
+
   Object.assign(Core, {
-    floorHeight, floorAir, crawlAir, layers, layerName, bandProblem, floorUse, seatFloor,
-    inner, hasSpan, spanOf, mainFloor, isMain, floorBox, floorLimit, writeSpan,
+    floorHeight, floorAir, crawlAir, floorName, crawlName, crawlRecords, crawlLayerId, crawlByLayer,
+    isCrawlLayer, newCrawl, addCrawl, removeCrawl, rehangCrawl, trenchCrawl, layers, layerName, bandProblem, adjacentCrawls,
+    floorUse, seatFloor,
+    inner, hasSpan, spanOf, mainFloor, isMain, floorBox, floorLimit, writeSpan, siteProblem, placeSite,
   });
 })(typeof window !== "undefined" ? window : globalThis);

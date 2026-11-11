@@ -10,11 +10,11 @@ Download Gregmatics.exe and open it. That file is the whole program. It uses the
 
 The list on the left runs from the top of the base down. Click a floor to edit that plan.
 
-Edit on a band opens the name, the slab, and the height. `+` in a gap adds a floor there. If that floor would land on one above it, the floors above move up, leaving two solid blocks between them.
+Edit on a band opens the name, the slab, and the height. Delete there removes that floor once the rooms and streets are gone. A crawlspace stays, hung under the floor above it. A plan keeps one floor. Delete on a crawlspace removes it and the trenches dug in it. `+` in a gap adds a floor there. If that floor would land on one above it, the floors above move up, leaving two solid blocks between them.
 
-File → Settings sets the floorplan baseline. The square shows a compass, and the arrows run out to its edges. Faint lines behind it stay square, like blocks, and get finer as the baseline covers more ground. Each corner has an X box and a Z box. A number past the opposite side swaps the two sides. Save applies the baseline, the name, the tier, and autosave. Closing with unsaved edits asks you to save or exit. A floor's Y is set when you add it, and it is required.
+File → Settings sets the floorplan baseline. The square shows a compass, and the arrows run out to its edges. Faint lines behind it stay square, like blocks, and get finer as the baseline covers more ground. Each corner has an X box and a Z box. Those boxes take whole numbers. A number past the opposite side turns the compass, and that corner keeps the number. Save applies the baseline, the name, the tier, and autosave. Closing with unsaved edits asks you to save or exit. A floor's Y is set when you add it, and it is required.
 
-The hatched band is the pipe crawl. Trenches are drawn there. The cube at the top of the list opens the 3D view. Drag to turn, right-drag to slide, scroll to zoom. Double-click something to frame it, or double-click empty ground to fit the base. Escape, or the cube again, returns to the plan.
+A new plan starts with one floor and no pipe crawl. When you add a floor, and a floor is already there, Crawlspace adds a crawlspace in that spot instead of a floor. It hangs under the floor above it. Two crawlspaces with no floor between them are named in Checks. The hatched band is a crawlspace. Trenches are drawn there. The cube at the top of the list opens the 3D view. Drag to turn, right-drag to slide, scroll to zoom. Double-click something to frame it, or double-click empty ground to fit the base. Escape, or the cube again, returns to the plan.
 
 ## Tools
 
@@ -38,7 +38,7 @@ Lock, on that panel, holds the room. You can still select it. It will not drag, 
 
 Drag out a street. A click makes a default length.
 
-Where two streets meet, the shared edge stays open. A street can carry a trench in the pipe crawl under it. The entrance street is part of the site. You cannot delete it or copy it.
+Where two streets meet, the shared edge stays open. A street can carry a trench in the pipe crawl under it. Entrance, on that panel, makes that street a way in. Any number of streets can be an entrance. Turn it off and the street stays, as an ordinary street.
 
 ![Door](assets/door.png)
 
@@ -78,6 +78,6 @@ Edit on the crawl sets which floor it hangs under, the gap, and the height. The 
 
 ## Plans
 
-Plans are `.gregmatic` files in the Gregmatics folder under AppData. An edit writes itself after a short pause. Turn Autosave off in File → Settings and the file waits for Ctrl+S or File → Save. Unsaved stays in the header until that write finishes.
+Plans are `.gregmatic` files in the Gregmatics folder under AppData. Opening Gregmatics brings back the plan last saved. With no plan yet, the New dialog opens; closing it leaves File → New and File → Load, and the rest of the window waits. An edit writes itself after a short pause. Turn Autosave off in File → Settings and the file waits for Ctrl+S or File → Save. Unsaved stays in the header until that write finishes.
 
-File → New asks for a floorplan name and the first floor's box, then adds another file. The file name is the floorplan name in lowercase, with spaces as underscores. A name already used becomes `_1`, then `_2`. File → Load opens a plan, and the dialog starts in that folder. Settings shows that file name under the floorplan name. Save in that sheet applies the name, the tier, and autosave. The tier choices are the quest book tabs, Tier 0 Stone Age through Tier 12 UMV. A multiblock stays locked until the plan reaches its tier. Export PNG saves the floor on screen.
+File → New asks for a floorplan name and the first floor's box, then adds another file at Stone, with one empty floor and no crawlspace or entrance. The box starts at 256 by 256, from 0 through 255. The file name is the floorplan name in lowercase, with spaces as underscores. A name already used becomes `_1`, then `_2`. File → Load opens a plan, and the dialog starts in that folder. Settings shows that file name under the floorplan name. Save in that sheet applies the name, the tier, and autosave. The tier choices are the quest book tabs, Tier 0 Stone Age through Tier 12 UMV. A multiblock stays locked until the plan reaches its tier. Export PNG saves the floor on screen. The printed sheets are drawn separately, from `blueprints/`, into `out/`.

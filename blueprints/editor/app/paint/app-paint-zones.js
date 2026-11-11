@@ -3,7 +3,7 @@
 (function (App) {
   "use strict";
 
-  const { Core, CRAWL, COLORS, state, L, cellBox, View, Paint } = App;
+  const { Core, COLORS, state, L, cellBox, View, Paint } = App;
 
   const SOFT_EDGE = "rgba(40, 44, 50, 0.45)";
   const CELL_GRID = "rgba(0, 0, 0, 0.16)";
@@ -270,7 +270,10 @@
   /** The floors whose outlines show through: the ones right above and below, or the floor over the crawl. */
   function nearFloors() {
     const layout = L();
-    if (state.layer === CRAWL) return [layout.site.crawl.under];
+    if (Core.isCrawlLayer(layout, state.layer)) {
+      const crawl = Core.crawlByLayer(layout, state.layer);
+      return crawl ? [crawl.under] : [];
+    }
     const floors = layout.floors.slice().sort((a, b) => a.slab - b.slab).map((f) => f.id);
     const i = floors.indexOf(state.layer);
     return [floors[i - 1], floors[i + 1]].filter(Boolean);
@@ -289,7 +292,7 @@
     }
     for (const z of layout.streets) {
       if (z.floor !== id) continue;
-      if (state.layer === CRAWL && z.trench !== false) {
+      if (Core.isCrawlLayer(layout, state.layer) && z.trench !== false) {
         const r = View.rectOf(z, v);
         g.fillStyle = Paint.hexAlpha(layout.palette.trench, GHOST_ALPHA);
         g.fillRect(r.x, r.y, r.w, r.h);

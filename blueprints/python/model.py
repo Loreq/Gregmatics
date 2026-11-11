@@ -112,9 +112,11 @@ def _left_of(a: int, b: int, style: str, y0: int, y1: int) -> list:
     return left
 
 
-def _trench_at(grid: dict, x: int, z: int) -> None:
-    """Dig the pipe crawl under one cell."""
-    carve(grid, x, z, *L.CRAWL["air"], "trench")
+def _trench_at(grid: dict, x: int, z: int, crawl) -> None:
+    """Dig one crawlspace under a cell. No crawlspace leaves the cell alone."""
+    if not crawl:
+        return
+    carve(grid, x, z, *crawl["air"], "trench")
 
 
 def door_meets_street(grid: dict, door) -> bool:
@@ -136,22 +138,24 @@ def _dig_streets(grid: dict) -> None:
         for x, z in street.cells():
             carve(grid, x, z, street.y0, street.y1, street.style, street.carve)
             if street.trench:
-                _trench_at(grid, x, z)
+                _trench_at(grid, x, z, L.crawl_under(street.floor, L.CRAWLS))
 
 
 def _dig_trenches(grid: dict) -> None:
     """The runs of the pipe crawl that are not under a street."""
     for trench in L.TRENCHES:
+        crawl = L.trench_owner(trench, L.CRAWLS)
         for x, z in trench.cells():
-            _trench_at(grid, x, z)
+            _trench_at(grid, x, z, crawl)
 
 
 def _dig_doors(grid: dict) -> None:
     """Doors go through rock only. One on the crawl's floor that meets a street carries the pipes through."""
     for door in L.DOORS:
-        if door.floor == L.CRAWL["under"] and door_meets_street(grid, door):
+        crawl = L.crawl_under(door.floor, L.CRAWLS)
+        if crawl and door_meets_street(grid, door):
             for x, z in door.cells():
-                _trench_at(grid, x, z)
+                _trench_at(grid, x, z, crawl)
         level = (door.y0 + door.y1) // 2
         for x, z in door.cells():
             found = style_at(grid, x, z, level)
@@ -372,8 +376,9 @@ def chunk_name(x: int, z: int) -> str:
 
 def chunk_bounds(name: str) -> tuple:
     """The blocks of a named chunk, as (x0, x1, z0, z1)."""
-    cx = L.COLUMNS.index(name[0]) + CHUNK_X0
-    cz = int(name[1:]) - 1 + CHUNK_Z0
+    letters, number = L.chunk_parts(name)
+    cx = L.COLUMNS.index(letters) + CHUNK_X0
+    cz = number - 1 + CHUNK_Z0
     return cx * 16, cx * 16 + 15, cz * 16, cz * 16 + 15
 
 

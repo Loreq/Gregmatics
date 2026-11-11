@@ -3,7 +3,7 @@
 (function (App) {
   "use strict";
 
-  const { Core, CATALOG, CRAWL, RESIZABLE, state, L, roomLocked, cellBox, Sel, View, Paint } = App;
+  const { Core, CATALOG, RESIZABLE, state, L, roomLocked, cellBox, Sel, View, Paint } = App;
 
   // The eight handles of a box, clockwise from the north-west corner.
   const HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -22,7 +22,7 @@
       if (Core.inside(box, x, z)) hits.push({ kind, index, slot, area: Core.area(box) });
     };
     for (const item of Core.zonesOn(layout, state.layer)) add(item.kind, item.index, Core.boxOf(item.kind, item.z));
-    if (Paint.showContents() && state.layer !== CRAWL) {
+    if (Paint.showContents() && !Core.isCrawlLayer(layout, state.layer)) {
       for (const item of Core.contentsOn(layout, state.layer)) {
         if (item.kind !== "walls") add(item.kind, item.index, Core.boxOf(item.kind, item.z));
       }

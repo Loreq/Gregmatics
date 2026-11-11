@@ -55,7 +55,8 @@ def dirty_box():
 
 def _chunk_order(name: str) -> tuple:
     """A chunk name's place on the grid, column first, so names sort the way they read."""
-    return L.COLUMNS.index(name[0]), int(name[1:])
+    letters, number = L.chunk_parts(name)
+    return L.COLUMNS.index(letters), number
 
 
 def dirty_span() -> str:
@@ -631,7 +632,7 @@ class Plan:
 
     def grade_line(self) -> None:
         """Dashed line where the entrance floor's ceiling comes within COVER blocks of the ground."""
-        top = L.FLOOR[L.ENTRANCE_FLOOR].air[1]
+        top = L.shown_floor().air[1]
         pen = PALETTE["ground"] + (220,)
         width = 2 if self.fine() else 3
         spot = None

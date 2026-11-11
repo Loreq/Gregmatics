@@ -9,8 +9,21 @@ namespace Gregmatics
     {
         const string Header = "// Written from the plan and catalog/. Do not edit; run py -3 python/generate.py for the sheets.\n";
 
-        /// <summary>The script the page loads, for one plan's text.</summary>
+        /// <summary>The script the page loads. No plan text means the page opens on the New dialog.</summary>
         public static string Script(string text, Catalog catalog)
+        {
+            var body = new JObject
+            {
+                ["app"] = Version(),
+                ["version"] = string.IsNullOrEmpty(text) ? "" : Files.Fingerprint(text),
+                ["layout"] = string.IsNullOrEmpty(text) ? JValue.CreateNull() : JToken.Parse(text),
+                ["catalog"] = CatalogJson(catalog),
+            };
+            return Header + "window.BASE = " + body.ToString(Newtonsoft.Json.Formatting.None) + ";\n";
+        }
+
+        /// <summary>The catalog the editor lists, in the order the files give.</summary>
+        static JObject CatalogJson(Catalog catalog)
         {
             var multis = new JObject();
             foreach (string key in catalog.MultiOrder)
@@ -21,22 +34,15 @@ namespace Gregmatics
             var groups = new JObject();
             foreach (string id in catalog.GroupOrder)
                 groups[id] = catalog.Groups[id];
-            var body = new JObject
+            return new JObject
             {
-                ["app"] = Version(),
-                ["version"] = Files.Fingerprint(text),
-                ["layout"] = JToken.Parse(text),
-                ["catalog"] = new JObject
-                {
-                    ["multis"] = multis,
-                    ["singles"] = singles,
-                    ["groups"] = groups,
-                    ["elevator"] = catalog.ElevatorReach,
-                    ["voltage"] = new JArray(Catalog.Voltage),
-                    ["selectable"] = new JArray(Catalog.Voltage),
-                },
+                ["multis"] = multis,
+                ["singles"] = singles,
+                ["groups"] = groups,
+                ["elevator"] = catalog.ElevatorReach,
+                ["voltage"] = new JArray(Catalog.Voltage),
+                ["selectable"] = new JArray(Catalog.Voltage),
             };
-            return Header + "window.BASE = " + body.ToString(Newtonsoft.Json.Formatting.None) + ";\n";
         }
 
         /// <summary>The program version, from the assembly.</summary>

@@ -13,7 +13,7 @@
     <Product>Gregmatics</Product>
     <AssemblyTitle>Gregmatics</AssemblyTitle>
     <Description>Floor plans for a GregTech New Horizons base</Description>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>

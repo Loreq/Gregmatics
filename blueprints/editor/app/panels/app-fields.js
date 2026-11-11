@@ -35,7 +35,7 @@
 
   /** Every floor, highest first. */
   function floorOptions() {
-    return L().floors.slice().sort((a, b) => b.slab - a.slab).map((f) => [f.id, f.name]);
+    return L().floors.slice().sort((a, b) => b.slab - a.slab).map((f) => [f.id, Core.floorName(f)]);
   }
 
   /** Floor ids, each once, lowest floor first. */
@@ -144,14 +144,17 @@
     }
   }
 
-  /** A street: its label, its trench when it runs over the crawl, and its floor. The entrance keeps its floor. */
+  /** A street: its label, whether it is an entrance, its trench when it runs over a crawl, and its floor. */
   function streetFields(F, rec) {
     F.text("Label", rec.label || "", (value) => History.change(() => setStreetLabel(rec, value)));
     flagField(F, rec, "Vertical label", "label_vertical");
-    if (rec.floor === L().site.crawl.under) {
+    F.check("Entrance", rec.style === "entry", (value) => History.change(() => {
+      rec.style = value ? "entry" : "corridor";
+    }));
+    if (Core.crawlRecords(L()).some((crawl) => crawl.under === rec.floor)) {
       F.check("Trench under", rec.trench !== false, (value) => History.change(() => { rec.trench = value; }));
     }
-    if (rec.style !== "entry") floorField(F, rec);
+    floorField(F, rec);
   }
 
   /** A stair: the two floors it joins, and the end you step on at the bottom. */
@@ -179,7 +182,7 @@
   function liftFields(F, rec) {
     labelField(F, rec);
     const floors = L().floors.slice().sort((a, b) => b.slab - a.slab);
-    F.checks("Stops", floors.map((f) => [f.id, f.name, rec.floors.includes(f.id)]), (id, on) => History.change(() => {
+    F.checks("Stops", floors.map((f) => [f.id, Core.floorName(f), rec.floors.includes(f.id)]), (id, on) => History.change(() => {
       const stops = new Set(rec.floors);
       if (on) stops.add(id);
       else stops.delete(id);
