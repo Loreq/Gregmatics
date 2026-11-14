@@ -17,7 +17,7 @@ Pillow writes them into `out/`. A failed audit is `out/audit.txt`, and the old s
 | --- | --- |
 | `%APPDATA%\Gregmatics` | The plans. Each one is a `.gregmatic` file. `settings.json` there remembers the folder and the open file. Not part of the repository. |
 | `../launcher/Gregmatics.csproj` | The program version is the `Version` property. Settings reads it. |
-| `../launcher/Program.cs` | The window. As `start.exe` it reads the editor in this folder. As the released `Gregmatics.exe` it reads the editor packed inside the file. |
+| `../launcher/Program.cs` | The window, on .NET 10. As `start.exe` it reads the editor in this folder. As the released `Gregmatics.exe` it reads the editor packed inside the file. The exe includes .NET. |
 | `../build.cmd` | Builds `start.exe` and `release\Gregmatics.exe`. |
 | `catalog/` | GTNH 2.9.0 machine facts as JSON. Multiblocks are one file per tier in `catalog/multiblocks/`. Machines are one file per group in `catalog/machines/`, because a machine's voltage is set when you place it. `groups.json` names the groups. `elevator.json` is the elevator reach. |
 | `python/` | The sheet drawing and the full audit. Run the commands above from this folder. |

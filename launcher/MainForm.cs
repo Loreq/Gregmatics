@@ -68,6 +68,7 @@ namespace Gregmatics
             this.sourceRoot = sourceRoot;
             this.catalog = catalog;
             this.script = script;
+            AutoScaleMode = AutoScaleMode.Dpi;
             Text = Title;
             ClientSize = new Size(1440, 900);
             MinimumSize = new Size(960, 640);
@@ -109,7 +110,7 @@ namespace Gregmatics
         /// <summary>The project folder when this exe sits in one, so the editor is read from disk.</summary>
         static string SourceRoot()
         {
-            string dir = Path.GetDirectoryName(Application.ExecutablePath);
+            string dir = Path.GetDirectoryName(Environment.ProcessPath);
             return File.Exists(Path.Combine(dir, "blueprints", "editor", "index.html")) ? dir : null;
         }
 

@@ -4,7 +4,7 @@
 
 Create floorplans for [GregTech New Horizons](https://github.com/GTNewHorizons/GT-New-Horizons-Modpack) - [2.9.0](https://github.com/GTNewHorizons/GT-New-Horizons-Modpack/releases/tag/2.9.0)
 
-Download Gregmatics.exe and open it. That file is the whole program. It uses the Microsoft Edge WebView2 runtime, which Windows already has when Edge is installed.
+Download Gregmatics.exe and open it. That file is the whole program, including .NET. It uses the Microsoft Edge WebView2 runtime, which Windows already has when Edge is installed.
 
 ## Floors
 

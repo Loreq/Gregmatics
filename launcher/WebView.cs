@@ -1,19 +1,33 @@
 using System;
-using System.Reflection;
+using System.IO;
+using Microsoft.Web.WebView2.Core;
 
 namespace Gregmatics
 {
-    /// <summary>Tells WebView2 where its loader was written, before the window is created.</summary>
+    /// <summary>Points WebView2 at the loader the .NET host extracted for a single-file exe.</summary>
     internal static class WebView
     {
-        /// <summary>Point the WebView2 assembly at the folder that holds WebView2Loader.dll.</summary>
-        public static void UseLoader(string folder)
+        const string Loader = "WebView2Loader.dll";
+
+        /// <summary>Use the loader beside the program, or the one the single-file host already unpacked.</summary>
+        public static void UseLoader()
         {
-            Assembly core = Assembly.Load("Microsoft.Web.WebView2.Core");
-            Type environment = core.GetType("Microsoft.Web.WebView2.Core.CoreWebView2Environment");
-            MethodInfo set = environment == null ? null : environment.GetMethod("SetLoaderDllFolderPath");
-            if (set != null)
-                set.Invoke(null, new object[] { folder });
+            if (File.Exists(Path.Combine(AppContext.BaseDirectory, Loader)))
+                return;
+            string search = AppContext.GetData("NATIVE_DLL_SEARCH_DIRECTORIES") as string;
+            if (string.IsNullOrEmpty(search))
+                return;
+            foreach (string dir in search.Split(Path.PathSeparator))
+            {
+                string folder = dir.Trim();
+                if (folder.Length == 0)
+                    continue;
+                if (File.Exists(Path.Combine(folder, Loader)))
+                {
+                    CoreWebView2Environment.SetLoaderDllFolderPath(folder);
+                    return;
+                }
+            }
         }
     }
 }

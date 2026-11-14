@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Gregmatics
 {
-    /// <summary>The editor, the catalog, and the window libraries carried inside the exe.</summary>
+    /// <summary>The editor, the catalog, and the icon carried inside the exe.</summary>
     internal static class Bundle
     {
         const string ResourceName = "Gregmatics.site.zip";

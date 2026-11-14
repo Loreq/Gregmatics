@@ -17,17 +17,13 @@ namespace Gregmatics
         const uint MbOk = 0;
         const uint MbIconError = 0x10;
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        static extern bool SetDllDirectory(string path);
-
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         static extern int MessageBox(IntPtr owner, string text, string caption, uint type);
 
-        /// <summary>Load the embedded program, then the WebView2 loader, before anything uses either.</summary>
+        /// <summary>Read the editor packed into this exe before the window opens.</summary>
         static Program()
         {
             Bundle.LoadEmbedded();
-            AppDomain.CurrentDomain.AssemblyResolve += Bundle.Resolve;
         }
 
         /// <summary>Run the program. A failure is written to the log, and shown unless this is a --test run.</summary>
@@ -40,7 +36,8 @@ namespace Gregmatics
             {
                 if (File.Exists(log))
                     File.Delete(log);
-                PrepareLoader();
+                Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+                WebView.UseLoader();
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 return MainForm.Run(test, log);
@@ -49,21 +46,6 @@ namespace Gregmatics
             {
                 return Fail(ex.Message, test, log);
             }
-        }
-
-        /// <summary>Put WebView2's loader where Windows can load it. The runtime itself stays the one Edge installed.</summary>
-        static void PrepareLoader()
-        {
-            byte[] bytes = Bundle.Bytes("deps/WebView2Loader.dll");
-            if (bytes == null)
-                throw new InvalidOperationException("Gregmatics could not find its window library.");
-            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName, "webview2");
-            Directory.CreateDirectory(dir);
-            string dll = Path.Combine(dir, "WebView2Loader.dll");
-            if (!File.Exists(dll) || new FileInfo(dll).Length != bytes.Length)
-                File.WriteAllBytes(dll, bytes);
-            SetDllDirectory(dir);
-            WebView.UseLoader(dir);
         }
 
         /// <summary>Where a failed start leaves its reason.</summary>
