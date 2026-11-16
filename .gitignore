@@ -10,6 +10,7 @@ launcher/pack/obj/
 launcher/site.zip
 _design/
 .cursor/
+.koga/
 /layout.json
 /layout/
 /out/
