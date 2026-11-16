@@ -1,7 +1,7 @@
 /* View-only 3D of the plan. Drag turns, right-drag slides, the wheel zooms toward the pointer.
    Double-click frames the thing under the pointer. Double-click empty ground fits the base.
    view3d-scene.js turns the plan into triangles, view3d-camera.js holds the camera's arithmetic,
-   and this file owns the WebGL canvas: it draws the scene, paints the names over it, and reads the pointer. */
+   and this file draws the scene with Three.js, paints the names over it, and reads the pointer. */
 (function (root) {
   "use strict";
 
@@ -9,10 +9,6 @@
   const Camera = root.Camera3D;
 
   const NO_SCENE = { origin: [0, 0, 0], opaque: null, clear: null, segs: [], picks: [], labels: [], slabs: [], bounds: null };
-  // Bytes per corner, and where the normal and the color start in it.
-  const CORNER_BYTES = 40;
-  const NORMAL_AT = 12;
-  const COLOR_AT = 24;
   const TAG_HALO = "rgba(244, 241, 234, 0.92)";
   const TAG_INK = "#241e18";
   // A room narrower than this on screen gets no name.
@@ -44,8 +40,8 @@
       }
     `;
 
-  // The WebGL canvas, and the plain canvas over it that names are painted on.
-  const canvas = { el: null, gl: null };
+  // The picture canvas, and the plain canvas over it that names are painted on.
+  const canvas = { el: null };
   const tags = { el: null, ctx: null };
   let layout = null;
   let catalog = null;
@@ -60,11 +56,12 @@
   let viewFrame = 0;
   const cam = Camera.create();
 
-  // What WebGL holds: the program, its inputs, and one buffer for each list of triangles.
-  let program = null;
-  let attrib = null;
-  let uMvp = null;
-  const mesh = { solid: null, lines: null, glass: null, hover: null, solidN: 0, lineN: 0, glassN: 0, hoverN: 0 };
+  // The picture: one renderer, and one mesh for each list of triangles, in draw order.
+  let renderer = null;
+  let stage = null;
+  let camera = null;
+  const mesh = { solid: null, lines: null, glass: null, hover: null };
+  const bufferSize = { w: 0, h: 0 };
   // What the outline and hover buffers were last built for, so they are rebuilt only when that changes.
   let edgeKey = "";
   let hoverKey = "";
@@ -95,66 +92,89 @@
     return (canvas.el.clientWidth || 1) / (canvas.el.clientHeight || 1);
   }
 
-  // ---- WebGL setup ----
+  // ---- the picture ----
 
-  /** Compile one shader. */
-  function shader(gl, type, source) {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, source);
-    gl.compileShader(sh);
-    return sh;
+  /** One mesh of corners, added in the order it should be drawn. */
+  function makePass(material) {
+    const item = new root.THREE.Mesh(new root.THREE.BufferGeometry(), material);
+    item.frustumCulled = false;
+    stage.add(item);
+    return item;
   }
 
-  /** Make the program and the buffers. Returns false when the program will not link. */
-  function setup(gl) {
-    program = gl.createProgram();
-    gl.attachShader(program, shader(gl, gl.VERTEX_SHADER, VERTEX_SHADER));
-    gl.attachShader(program, shader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER));
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
-    gl.useProgram(program);
-    uMvp = gl.getUniformLocation(program, "uMvp");
-    attrib = {
-      pos: gl.getAttribLocation(program, "aPos"),
-      nrm: gl.getAttribLocation(program, "aNrm"),
-      col: gl.getAttribLocation(program, "aCol"),
-    };
-    mesh.solid = gl.createBuffer();
-    mesh.lines = gl.createBuffer();
-    mesh.glass = gl.createBuffer();
-    mesh.hover = gl.createBuffer();
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.clearColor(0.173, 0.149, 0.133, 1);
+  /** Make the renderer and the four meshes. Returns false when the renderer cannot be created. */
+  function setup(el) {
+    const THREE = root.THREE;
+    if (!THREE) return false;
+    const previous = el.getContext;
+    /** Keep the canvas opaque. This Three build turns alpha on anyway. */
+    function keepOpaque(kind, attrs) {
+      if (attrs) attrs.alpha = false;
+      return previous.call(this, kind, attrs);
+    }
+    el.getContext = keepOpaque;
+    let created;
+    try {
+      created = new THREE.WebGLRenderer({
+        canvas: el,
+        antialias: true,
+        alpha: false,
+      });
+    } catch (err) {
+      created = null;
+    } finally {
+      el.getContext = previous;
+    }
+    if (!created) return false;
+    // Linear output leaves the clear color at the same 0.173, 0.149, 0.133.
+    created.outputColorSpace = THREE.LinearSRGBColorSpace;
+    created.sortObjects = false;
+    const clear = new THREE.Color();
+    clear.r = 0.173;
+    clear.g = 0.149;
+    clear.b = 0.133;
+    created.setClearColor(clear, 1);
+    stage = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera();
+    camera.matrixAutoUpdate = false;
+    camera.matrixWorldAutoUpdate = false;
+    const material = new THREE.ShaderMaterial({
+      vertexShader: VERTEX_SHADER,
+      fragmentShader: FRAGMENT_SHADER,
+      uniforms: { uMvp: { value: matMvp } },
+      blending: THREE.CustomBlending,
+      depthFunc: THREE.LessDepth,
+      side: THREE.DoubleSide,
+    });
+    mesh.solid = makePass(material);
+    mesh.lines = makePass(material);
+    mesh.glass = makePass(material);
+    mesh.hover = makePass(material);
+    renderer = created;
     return true;
   }
 
-  /** Point the program's inputs at a buffer of corners. */
-  function bindMesh(gl, buffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.enableVertexAttribArray(attrib.pos);
-    gl.vertexAttribPointer(attrib.pos, 3, gl.FLOAT, false, CORNER_BYTES, 0);
-    gl.enableVertexAttribArray(attrib.nrm);
-    gl.vertexAttribPointer(attrib.nrm, 3, gl.FLOAT, false, CORNER_BYTES, NORMAL_AT);
-    gl.enableVertexAttribArray(attrib.col);
-    gl.vertexAttribPointer(attrib.col, 4, gl.FLOAT, false, CORNER_BYTES, COLOR_AT);
+  /** Replace one mesh's corners with the next list of floats. */
+  function fillGeometry(item, data) {
+    const THREE = root.THREE;
+    const array = data && data.length ? data : new Float32Array(0);
+    const geometry = new THREE.BufferGeometry();
+    const buffer = new THREE.InterleavedBuffer(array, root.Mesh3D.CORNER_SIZE);
+    geometry.setAttribute("aPos", new THREE.InterleavedBufferAttribute(buffer, 3, 0));
+    geometry.setAttribute("aNrm", new THREE.InterleavedBufferAttribute(buffer, 3, 3));
+    geometry.setAttribute("aCol", new THREE.InterleavedBufferAttribute(buffer, 4, 6));
+    geometry.setDrawRange(0, array.length / root.Mesh3D.CORNER_SIZE);
+    const previous = item.geometry;
+    item.geometry = geometry;
+    item.visible = array.length > 0;
+    if (previous) previous.dispose();
   }
 
-  /** Fill a buffer with corners. Returns how many corners it now holds. */
-  function fillBuffer(gl, buffer, data, usage) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, usage);
-    return data.length / root.Mesh3D.CORNER_SIZE;
-  }
-
-  /** Hand the scene's solid and glass triangles to WebGL. The outlines follow at the next draw. */
+  /** Hand the scene's solid and glass triangles to the picture. The outlines follow at the next draw. */
   function uploadMesh() {
-    const gl = canvas.gl;
-    if (!gl || !mesh.solid) return;
-    const filled = (data) => (data && data.length ? data : new Float32Array(0));
-    mesh.solidN = fillBuffer(gl, mesh.solid, filled(scene.opaque), gl.STATIC_DRAW);
-    mesh.glassN = fillBuffer(gl, mesh.glass, filled(scene.clear), gl.STATIC_DRAW);
+    if (!renderer || !mesh.solid) return;
+    fillGeometry(mesh.solid, scene.opaque);
+    fillGeometry(mesh.glass, scene.clear);
     edgeKey = "";
     hoverKey = "";
   }
@@ -176,7 +196,7 @@
     edgeKey = stamp;
     const bars = new Triangles(scene.origin);
     for (const s of scene.segs) bars.ribbon(s[0], s[1], s[2], s[3], s[4], s[5], s[6], width);
-    mesh.lineN = fillBuffer(canvas.gl, mesh.lines, bars.toArray(), canvas.gl.DYNAMIC_DRAW);
+    fillGeometry(mesh.lines, bars.toArray());
   }
 
   /** Add the twelve edges of a box to a list of triangles, as bars. */
@@ -205,7 +225,7 @@
     hoverKey = stamp;
     const bars = new Triangles(scene.origin);
     if (hovered) boxEdges(bars, hovered.box, lighten(hovered.color, 0.58), width * 1.8);
-    mesh.hoverN = fillBuffer(canvas.gl, mesh.hover, bars.toArray(), canvas.gl.DYNAMIC_DRAW);
+    fillGeometry(mesh.hover, bars.toArray());
   }
 
   // ---- names painted over the picture ----
@@ -322,12 +342,14 @@
 
   // ---- drawing ----
 
-  /** Draw one buffer of triangles, when it has any. */
-  function drawMesh(gl, buffer, count, mode, mask) {
-    if (!count) return;
-    bindMesh(gl, buffer);
-    gl.depthMask(mask);
-    gl.drawArrays(mode, 0, count);
+  /** Match the renderer to the drawing buffer. Leave the page CSS alone. */
+  function syncSize() {
+    const w = canvas.el.width;
+    const h = canvas.el.height;
+    if (w === bufferSize.w && h === bufferSize.h) return;
+    bufferSize.w = w;
+    bufferSize.h = h;
+    renderer.setSize(w, h, false);
   }
 
   /** Make the canvas as many pixels as it is shown at. */
@@ -350,21 +372,15 @@
 
   /** Draw the scene now: solids, outlines, glass, the hover box, then the names. */
   function draw() {
-    const gl = canvas.gl;
-    if (!gl || !scene.opaque) return;
+    if (!renderer || !scene.opaque) return;
     fitCanvas();
-    gl.viewport(0, 0, canvas.el.width, canvas.el.height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    syncSize();
     aimCamera();
-    gl.useProgram(program);
-    gl.uniformMatrix4fv(uMvp, false, matMvp);
-    drawMesh(gl, mesh.solid, mesh.solidN, gl.TRIANGLES, true);
+    camera.projectionMatrix.fromArray(matProj);
+    camera.matrixWorldInverse.fromArray(matView);
     refreshEdges();
-    drawMesh(gl, mesh.lines, mesh.lineN, gl.TRIANGLES, true);
-    drawMesh(gl, mesh.glass, mesh.glassN, gl.TRIANGLES, true);
     refreshHover();
-    drawMesh(gl, mesh.hover, mesh.hoverN, gl.TRIANGLES, true);
-    gl.depthMask(true);
+    renderer.render(stage, camera);
     paintLabels();
   }
 
@@ -474,7 +490,7 @@
 
   /**
    * Show a plan on a canvas. `onHover(name)` hears what is under the pointer, and `fill(spec)` gives a
-   * multiblock's color. Returns false when the window has no WebGL.
+   * multiblock's color. Returns false when the renderer cannot be created.
    */
   function open(el, nextLayout, nextCatalog, onHover, fill) {
     canvas.el = el;
@@ -484,9 +500,8 @@
     if (fill) padColor = fill;
     shown = null;
     hovered = null;
-    if (!canvas.gl) {
-      canvas.gl = el.getContext("webgl", { antialias: true, alpha: false });
-      if (!canvas.gl || !setup(canvas.gl)) return false;
+    if (!renderer) {
+      if (!setup(el)) return false;
       listen(el);
     }
     rebuild();

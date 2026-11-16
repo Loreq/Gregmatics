@@ -78,6 +78,7 @@ The 3D view is four objects, one a file. Only `View3D` is used by the page.
 
 | File | Holds |
 | --- | --- |
+| `view3d/three.min.js` | `THREE`: Three.js r160, which draws the picture. |
 | `view3d/view3d-mesh.js` | `Mesh3D`: triangles and the outlines drawn over them. |
 | `view3d/view3d-camera.js` | `Camera3D`: the camera, its matrices, and what a pixel points at. |
 | `view3d/view3d-scene.js` | `Scene3D`: the plan as shapes, labels, and things to pick. |
