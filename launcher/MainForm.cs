@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -250,6 +251,12 @@ namespace Gregmatics
             {
                 return;
             }
+            string method = (string)msg["method"] ?? "";
+            if (method == "check_update" || method == "install_update")
+            {
+                BeginUpdate(method, msg["id"]);
+                return;
+            }
             JObject reply;
             try
             {
@@ -269,6 +276,48 @@ namespace Gregmatics
             }
         }
 
+        /// <summary>Run a check or an install off the window thread, then answer the page.</summary>
+        void BeginUpdate(string method, JToken id)
+        {
+            Task.Run(async () =>
+            {
+                JObject reply;
+                try
+                {
+                    reply = method == "install_update" ? await Gregmatics.Update.Install().ConfigureAwait(false) : await Gregmatics.Update.Check().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    reply = Failed(ex.Message);
+                }
+                if (id != null)
+                    reply["id"] = id.DeepClone();
+                bool restart = reply["restarting"] != null && reply["restarting"].Type == JTokenType.Boolean && reply["restarting"].Value<bool>();
+                try
+                {
+                    BeginInvoke((MethodInvoker)(() => DeliverUpdate(reply, restart)));
+                }
+                catch (InvalidOperationException)
+                {
+                }
+            });
+        }
+
+        /// <summary>Hand an update reply to the page, and close once the helper is waiting to swap the exe.</summary>
+        void DeliverUpdate(JObject reply, bool restart)
+        {
+            try
+            {
+                if (view != null && view.CoreWebView2 != null)
+                    view.CoreWebView2.PostWebMessageAsJson(reply.ToString(Formatting.None));
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            if (restart)
+                Close();
+        }
+
         /// <summary>The reply for one method the page can ask for.</summary>
         JObject Answer(JObject msg)
         {
@@ -278,6 +327,8 @@ namespace Gregmatics
             if (method == "plan_info") return PlanInfo();
             if (method == "rename_plan") return Rename(TextOf(msg, "name"));
             if (method == "set_autosave") return new JObject { ["ok"] = true, ["autosave"] = Plans.SetAutosave(JsonText.Truthy(msg["enabled"])) };
+            if (method == "set_check_updates") return new JObject { ["ok"] = true, ["checkUpdates"] = Plans.SetCheckUpdates(JsonText.Truthy(msg["enabled"])) };
+            if (method == "open_release") return Gregmatics.Update.OpenPage();
             if (method == "choose_folder") return ChooseFolder();
             if (method == "create_plan") return Create(TextOf(msg, "name"), TextOf(msg, "text"));
             if (method == "choose_plan") return ChoosePlan();
@@ -335,6 +386,7 @@ namespace Gregmatics
                     ["name"] = "",
                     ["plans"] = new JArray(),
                     ["autosave"] = Plans.Autosave(),
+                    ["checkUpdates"] = Plans.CheckUpdates(),
                 };
             }
             return new JObject
@@ -345,6 +397,7 @@ namespace Gregmatics
                 ["name"] = Plans.CurrentName(),
                 ["plans"] = new JArray(Plans.PlanNames()),
                 ["autosave"] = Plans.Autosave(),
+                ["checkUpdates"] = Plans.CheckUpdates(),
             };
         }
 

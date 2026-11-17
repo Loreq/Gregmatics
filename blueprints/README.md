@@ -113,6 +113,7 @@ The page itself is `App`, in `app/`. `app-state.js` and `app.js` sit at the top 
 | `app/dialogs/app-floor-dialog.js` | `FloorDialog` | Adding a floor, editing one, and editing the pipe crawl. |
 | `app/dialogs/app-bounds.js` | `Bounds` | The compass picture a floor's footprint is typed into. |
 | `app/dialogs/app-settings.js` | `Settings` | File → Settings. |
+| `app/dialogs/app-update.js` | `Update` | Help → Check for updates. |
 | `app/panels/app-panels.js` | `Panels` | `refresh()`, the menu bar, the tool bar, and the line that says what is under the pointer. |
 | `app/panels/app-lists.js` | `Lists` | The Checks list and the list of what is on the floor. |
 | `app/panels/app-picker.js` | `Picker` | The catalog picker. |

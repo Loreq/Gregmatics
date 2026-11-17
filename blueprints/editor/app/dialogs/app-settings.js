@@ -1,10 +1,10 @@
-/* File → Settings: the plan's name and tier, autosave, the plan folder, and the main floor's
-   footprint. Nothing changes until Save, and closing with changes pending asks first. */
+/* File → Settings: the plan's name and tier, autosave, the launch update check, the plan folder,
+   and the main floor's footprint. Nothing changes until Save, and closing with changes pending asks first. */
 (function (App) {
   "use strict";
 
   const {
-    Core, CATALOG, AUTOSAVE_KEY, $, state, L, unsaved, status,
+    Core, CATALOG, AUTOSAVE_KEY, CHECK_UPDATES_KEY, $, state, L, unsaved, status,
     History, Files, Save, Bounds, Dialogs, Panels,
   } = App;
 
@@ -87,6 +87,27 @@
     return (reply && reply.error) || "Could not store that setting.";
   }
 
+  // ---- the launch check ----
+
+  /** Remember the launch-check switch in the browser. */
+  function storeCheckUpdates() {
+    localStorage.setItem(CHECK_UPDATES_KEY, state.checkUpdates ? "on" : "off");
+  }
+
+  /** Turn the launch check on or off, here and in the desktop window. Resolves to a problem, or "". */
+  async function applyCheckUpdates(on) {
+    state.checkUpdates = on;
+    storeCheckUpdates();
+    const api = Files.desktopApi();
+    if (!api) return "";
+    const reply = await api.set_check_updates(on);
+    if (reply && reply.ok) return "";
+    state.checkUpdates = !on;
+    $("check-on-launch").checked = !on;
+    storeCheckUpdates();
+    return (reply && reply.error) || "Could not store that setting.";
+  }
+
   // ---- the footprint ----
 
   /** Put the footprint picture in the dialog, for the main floor. */
@@ -119,6 +140,7 @@
     Files.refreshFolder();
     mountBounds();
     $("autosave").checked = state.autosave;
+    $("check-on-launch").checked = state.checkUpdates;
     await Files.refreshPlanFiles();
     syncPlanName();
     $("settings-dialog").showModal();
@@ -130,6 +152,7 @@
     if ($("plan-name").value.trim() !== planName()) return true;
     if ($("tier").value !== Core.planTier(L())) return true;
     if ($("autosave").checked !== state.autosave) return true;
+    if ($("check-on-launch").checked !== state.checkUpdates) return true;
     const floor = Core.mainFloor(L());
     if (!floor || !boundsEditor) return false;
     const next = boundsEditor.read();
@@ -187,6 +210,10 @@
     applyPlanChanges(floor, { x0: next.x0, x1: next.x1, z0: next.z0, z1: next.z1 }, tier, currentTier);
     if ($("autosave").checked !== state.autosave) {
       const failed = await applyAutosave($("autosave").checked);
+      if (failed) return refuse(failed);
+    }
+    if ($("check-on-launch").checked !== state.checkUpdates) {
+      const failed = await applyCheckUpdates($("check-on-launch").checked);
       if (failed) return refuse(failed);
     }
     if (name !== planName() && !(await applyPlanName(name))) return false;

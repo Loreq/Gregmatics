@@ -24,6 +24,15 @@
   const CHUNK = 16;
   // The cell grid shows from this many pixels a block.
   const GRID_FROM = 6;
+  // A room wall is 1px until the cell grid shows, then this heavier stroke. The label rim uses it too.
+  const WALL_NEAR = 1.5;
+  // The cell grid is the wall ink at this strength, so a wall stays darker than a block line.
+  const CELL_ALPHA = 0.18;
+  // The shared label: a room name's step, and the smallest a street or multiblock name may shrink to.
+  const LABEL_MIN = 10;
+  const LABEL_MAX = 15;
+  const LABEL_AT = 1.6;
+  const LABEL_FLOOR = 8;
   // An exported picture: pixels per block, and the margins that hold its rulers and title.
   const EXPORT = { scale: 8, left: 70, top: 90, right: 30, bottom: 30 };
 
@@ -47,9 +56,9 @@
     g.fill();
   }
 
-  /** Paint text with a pale edge, so it reads over any fill. */
+  /** Paint text with a thin pale rim, so the letter stays the ink. */
   function halo(g, text, x, y, color = COLORS.INK) {
-    g.lineWidth = 3;
+    g.lineWidth = WALL_NEAR;
     g.strokeStyle = TEXT_HALO;
     g.lineJoin = "round";
     g.strokeText(text, x, y);
@@ -57,7 +66,7 @@
     g.fillText(text, x, y);
   }
 
-  /** Paint a name that is part of the floor, such as a street's, upright or turned on its side. */
+  /** Paint a text mark upright or turned on its side. */
   function painted(g, text, x, y, vertical, sc, align = "center") {
     g.save();
     g.font = `bold ${Math.max(9, Math.min(13, sc * 1.3))}px ${FONT}`;
@@ -78,6 +87,33 @@
   /** Set the font for a line of text. */
   function setFont(g, size, bold) {
     g.font = `${bold ? "bold " : ""}${size}px ${FONT}`;
+  }
+
+  /** The room wall's weight: a hairline until the cell grid shows, then a heavier stroke. */
+  function wallWidth(scale) {
+    return scale >= GRID_FROM ? WALL_NEAR : 1;
+  }
+
+  /** The cell grid's ink: the wall color, faint enough to sit under a wall. */
+  function cellInk() {
+    return hexAlpha(COLORS.WALL, CELL_ALPHA);
+  }
+
+  /** The shared label size at this zoom, the same step a room name uses. */
+  function labelSize(scale) {
+    return Math.max(LABEL_MIN, Math.min(LABEL_MAX, scale * LABEL_AT));
+  }
+
+  /** The largest shared label size that fits a width and, when given, a height. 0 when none does. */
+  function fitLabel(g, text, limit, scale, height) {
+    let size = labelSize(scale);
+    setFont(g, size, true);
+    while (size > LABEL_FLOOR && (g.measureText(text).width > limit || size > height)) {
+      size -= 1;
+      setFont(g, size, true);
+    }
+    if (g.measureText(text).width > limit || size > height) return 0;
+    return size;
   }
 
   // ---- the ground under the floor ----
@@ -121,13 +157,20 @@
     }
   }
 
-  /** A tint and a dashed edge around the chunks where pollution is allowed. */
+  /** A tint over the chunks where pollution is allowed. The dash is drawn later, over the chunk lines. */
   function paintDirty(g, v) {
     const dirty = dirtyBox();
     if (!dirty) return;
     const r = View.rectOf(dirty, v);
     g.fillStyle = DIRTY_FILL;
     g.fillRect(r.x, r.y, r.w, r.h);
+  }
+
+  /** The dashed edge of the dirty chunks, drawn after the chunk lines so those lines do not cross it. */
+  function paintDirtyEdge(g, v) {
+    const dirty = dirtyBox();
+    if (!dirty) return;
+    const r = View.rectOf(dirty, v);
     g.setLineDash([9, 6]);
     g.strokeStyle = DIRTY_EDGE;
     g.lineWidth = 2;
@@ -255,12 +298,15 @@
     const items = Core.zonesOn(L(), state.layer);
     g.save();
     const all = paintGround(g, v);
-    paintChunkLines(g, v, all);
     paintDirty(g, v);
     paintSpan(g, v);
     if (state.show.others) PaintZones.ghosts(g, v);
-    for (const item of items) PaintZones.zone(g, v, item);
+    PaintZones.fills(g, v, items);
     if (v.scale >= GRID_FROM) PaintZones.cellGrid(g, v, items);
+    paintChunkLines(g, v, all);
+    paintDirtyEdge(g, v);
+    PaintZones.walls(g, v, items);
+    PaintZones.details(g, v, items);
     if (showContents() && !Core.isCrawlLayer(L(), state.layer)) PaintContents.paint(g, v);
     for (const item of items) PaintZones.label(g, v, item);
     paintRulers(g, v, all);
@@ -364,6 +410,8 @@
   }
 
   Object.assign(App.Paint, {
-    FONT, line, triangle, halo, painted, hexAlpha, setFont, showContents, paint, notePlan, paintFrame, draw, exportPng,
+    FONT, GRID_FROM, line, triangle, halo, painted, hexAlpha, setFont,
+    wallWidth, cellInk, labelSize, fitLabel,
+    showContents, paint, notePlan, paintFrame, draw, exportPng,
   });
 })(window.App);

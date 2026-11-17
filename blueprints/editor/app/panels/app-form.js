@@ -6,6 +6,8 @@
   const { SIDE_NAMES, make, button } = App;
 
   const SIDES = ["n", "e", "s", "w"];
+  // X then Z, the two boxes of a point.
+  const AXES = ["X", "Z"];
 
   /** A new input of a type, holding a value. */
   function input(type, value) {
@@ -29,6 +31,17 @@
     mark.type = "button";
     mark.title = hint;
     return mark;
+  }
+
+  /** A number box marked with a letter, named for the row it sits on. */
+  function axisBox(labelText, letter, value) {
+    const el = input("number", value);
+    el.setAttribute("aria-label", `${labelText} ${letter}`);
+    const mark = make("span", "", letter);
+    mark.setAttribute("aria-hidden", "true");
+    const label = make("label");
+    label.append(mark, el);
+    return { el, label };
   }
 
   /** Builds the rows of one form. Every method that adds a control returns that control. */
@@ -71,16 +84,16 @@
       return this.row(labelText, el, opts.hint);
     }
 
-    /** Add several number boxes side by side. They commit together, as a list, once every one reads as a number. */
+    /** Add an X box and a Z box. They commit together, as a list, once both read as a number. */
     pair(labelText, values, onCommit) {
       const wrap = make("div", "pair");
-      const inputs = values.map((v) => input("number", v));
-      for (const el of inputs) {
-        el.addEventListener("change", () => {
-          const nums = inputs.map((i) => Math.round(Number(i.value)));
+      const boxes = values.map((value, index) => axisBox(labelText, AXES[index], value));
+      for (const box of boxes) {
+        box.el.addEventListener("change", () => {
+          const nums = boxes.map((item) => Math.round(Number(item.el.value)));
           if (nums.every(Number.isFinite)) onCommit(nums);
         });
-        wrap.append(el);
+        wrap.append(box.label);
       }
       return this.row(labelText, wrap);
     }

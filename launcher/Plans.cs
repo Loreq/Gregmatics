@@ -34,7 +34,8 @@ namespace Gregmatics
             if (!current.EndsWith(PlanSuffix, StringComparison.OrdinalIgnoreCase))
                 current += PlanSuffix;
             bool autosave = !stored.ContainsKey("autosave") || JsonText.Truthy(stored["autosave"]);
-            return new JObject { ["folder"] = folder, ["current"] = current, ["autosave"] = autosave };
+            bool checkUpdates = !stored.ContainsKey("checkUpdates") || JsonText.Truthy(stored["checkUpdates"]);
+            return new JObject { ["folder"] = folder, ["current"] = current, ["autosave"] = autosave, ["checkUpdates"] = checkUpdates };
         }
 
         /// <summary>Whether the editor writes each edit without being asked.</summary>
@@ -48,6 +49,20 @@ namespace Gregmatics
         {
             JObject settings = Settings();
             WriteSettings(settings["folder"].Value<string>(), settings["current"].Value<string>(), enabled);
+            return enabled;
+        }
+
+        /// <summary>Whether Gregmatics looks for a newer release when it opens. On when the setting has never been stored.</summary>
+        public static bool CheckUpdates()
+        {
+            return Settings()["checkUpdates"].Value<bool>();
+        }
+
+        /// <summary>Turn the launch check on or off, and say what it is now.</summary>
+        public static bool SetCheckUpdates(bool enabled)
+        {
+            JObject settings = Settings();
+            WriteSettings(settings["folder"].Value<string>(), settings["current"].Value<string>(), null, null, enabled);
             return enabled;
         }
 
@@ -317,11 +332,13 @@ namespace Gregmatics
             return name;
         }
 
-        /// <summary>Store the plan folder, the open plan, and the plan last saved. Autosave and the last save keep their values unless one is given.</summary>
-        static void WriteSettings(string folder, string current, bool? autosave, string edited = null)
+        /// <summary>Store the plan folder, the open plan, and the plan last saved. Autosave, the launch check, and the last save keep their values unless one is given.</summary>
+        static void WriteSettings(string folder, string current, bool? autosave, string edited = null, bool? checkUpdates = null)
         {
             if (autosave == null)
                 autosave = Settings()["autosave"].Value<bool>();
+            if (checkUpdates == null)
+                checkUpdates = Settings()["checkUpdates"].Value<bool>();
             if (edited == null)
                 edited = StoredEdited();
             var body = new JObject
@@ -329,6 +346,7 @@ namespace Gregmatics
                 ["folder"] = folder,
                 ["current"] = Path.GetFileName(current),
                 ["autosave"] = autosave.Value,
+                ["checkUpdates"] = checkUpdates.Value,
             };
             if (!string.IsNullOrEmpty(edited))
                 body["edited"] = Path.GetFileName(edited);

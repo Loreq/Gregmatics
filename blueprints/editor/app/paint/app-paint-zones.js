@@ -6,7 +6,8 @@
   const { Core, COLORS, state, L, cellBox, View, Paint } = App;
 
   const SOFT_EDGE = "rgba(40, 44, 50, 0.45)";
-  const CELL_GRID = "rgba(0, 0, 0, 0.16)";
+  // A street's own edge is the wall ink, lighter than a room wall, still visible on the street fill.
+  const STREET_ALPHA = 0.7;
   const MARK_FILL = "#FFFDF8";
   const SHAFT_HATCH = "rgba(90, 150, 190, 0.45)";
   const SHAFT_EDGE = "#5A96BE";
@@ -87,6 +88,78 @@
     g.restore();
   }
 
+  /** Whether a door on this floor covers a cell. A door is an opening, so the wall stops there. */
+  function doorAt(floor, x, z) {
+    return L().doors.some((door) => door.floor === floor && Core.inside(door, x, z));
+  }
+
+  /** Whether this room draws the wall beside one of its cells. The west and north rooms own a shared line. */
+  function roomWall(room, side, along) {
+    const across = side === "w" || side === "e";
+    const x = across ? (side === "w" ? room.x0 : room.x1) : along;
+    const z = across ? along : (side === "n" ? room.z0 : room.z1);
+    const nx = side === "w" ? x - 1 : side === "e" ? x + 1 : x;
+    const nz = side === "n" ? z - 1 : side === "s" ? z + 1 : z;
+    if (doorAt(room.floor, nx, nz)) return false;
+    if ((side === "w" || side === "n") && Core.roomAt(L(), room.floor, nx, nz)) return false;
+    return true;
+  }
+
+  /** Whether a street draws its edge beside a cell. It stops for another street, a room, or a door. */
+  function streetExposed(street, x, z) {
+    if (!streetEnds(street, x, z)) return false;
+    if (Core.roomAt(L(), street.floor, x, z)) return false;
+    return !doorAt(street.floor, x, z);
+  }
+
+  /** Add runs of one boundary. East and south use the owner's last pixel. West and north use the first. */
+  function traceBoundary(g, v, vertical, at, origin, runs, lastPixel) {
+    const nudge = lastPixel ? -0.5 : 0.5;
+    for (const [a, b] of runs) {
+      if (vertical) {
+        const x = View.blockX(at, v) + nudge;
+        g.moveTo(x, View.blockY(origin + a, v));
+        g.lineTo(x, View.blockY(origin + b + 1, v));
+      } else {
+        const y = View.blockY(at, v) + nudge;
+        g.moveTo(View.blockX(origin + a, v), y);
+        g.lineTo(View.blockX(origin + b + 1, v), y);
+      }
+    }
+  }
+
+  /** Add one room's walls. A shared edge is drawn once, and a door is left open. */
+  function traceRoomWalls(g, v, room) {
+    const depth = room.z1 - room.z0 + 1;
+    const width = room.x1 - room.x0 + 1;
+    traceBoundary(g, v, true, room.x0, room.z0, edgeRuns(depth, (i) => roomWall(room, "w", room.z0 + i)), false);
+    traceBoundary(g, v, true, room.x1 + 1, room.z0, edgeRuns(depth, (i) => roomWall(room, "e", room.z0 + i)), true);
+    traceBoundary(g, v, false, room.z0, room.x0, edgeRuns(width, (i) => roomWall(room, "n", room.x0 + i)), false);
+    traceBoundary(g, v, false, room.z1 + 1, room.x0, edgeRuns(width, (i) => roomWall(room, "s", room.x0 + i)), true);
+  }
+
+  /** A street's own edge, in the wall ink and lighter than a room wall. A room draws the line it shares. */
+  function paintStreetWall(g, v, street) {
+    const depth = street.z1 - street.z0 + 1;
+    const width = street.x1 - street.x0 + 1;
+    g.save();
+    g.beginPath();
+    g.lineCap = "butt";
+    g.setLineDash([]);
+    g.strokeStyle = Paint.hexAlpha(COLORS.WALL, STREET_ALPHA);
+    g.lineWidth = 1;
+    const west = edgeRuns(depth, (i) => streetExposed(street, street.x0 - 1, street.z0 + i));
+    const east = edgeRuns(depth, (i) => streetExposed(street, street.x1 + 1, street.z0 + i));
+    const north = edgeRuns(width, (i) => streetExposed(street, street.x0 + i, street.z0 - 1));
+    const south = edgeRuns(width, (i) => streetExposed(street, street.x0 + i, street.z1 + 1));
+    traceBoundary(g, v, true, street.x0, street.z0, west, false);
+    traceBoundary(g, v, true, street.x1 + 1, street.z0, east, true);
+    traceBoundary(g, v, false, street.z0, street.x0, north, false);
+    traceBoundary(g, v, false, street.z1 + 1, street.x0, south, true);
+    g.stroke();
+    g.restore();
+  }
+
   // ---- one zone ----
 
   /** A lift: a dark cell with an arrow up and an arrow down. */
@@ -161,29 +234,84 @@
     paintStairArrow(g, stair, r, sc, alongZ);
   }
 
-  /** One zone: its fill, and the edge its kind has. */
+  /** The two jambs of a door. The long sides stay open, so the wall reads as a break. */
+  function paintDoorJambs(g, door, r) {
+    const alongX = door.x1 - door.x0 >= door.z1 - door.z0;
+    g.strokeStyle = SOFT_EDGE;
+    g.lineWidth = 1;
+    g.lineCap = "butt";
+    g.setLineDash([]);
+    g.beginPath();
+    if (alongX) {
+      g.moveTo(r.x + 0.5, r.y);
+      g.lineTo(r.x + 0.5, r.y + r.h);
+      g.moveTo(r.x + r.w - 0.5, r.y);
+      g.lineTo(r.x + r.w - 0.5, r.y + r.h);
+    } else {
+      g.moveTo(r.x, r.y + 0.5);
+      g.lineTo(r.x + r.w, r.y + 0.5);
+      g.moveTo(r.x, r.y + r.h - 0.5);
+      g.lineTo(r.x + r.w, r.y + r.h - 0.5);
+    }
+    g.stroke();
+  }
+
+  /** One zone that is not a room or a street: its fill, and the edge its kind has. */
   function zone(g, v, item) {
     const { kind, z } = item;
-    const sc = v.scale;
     const r = View.rectOf(Core.boxOf(kind, z), v);
     if (kind === "lifts") {
-      paintLift(g, r, sc);
+      paintLift(g, r, v.scale);
       return;
     }
+    if (kind === "rooms" || kind === "streets") return;
     g.fillStyle = zoneFill(kind, z);
     g.fillRect(r.x, r.y, r.w, r.h);
-    if (kind === "streets") {
-      streetEdges(g, z, v);
+    if (kind === "doors") {
+      paintDoorJambs(g, z, r);
       return;
     }
     if (kind === "shafts") {
       paintShaft(g, r);
       return;
     }
-    if (kind === "stairs") paintStair(g, z, r, sc);
-    g.lineWidth = kind === "rooms" ? 1.5 : 1;
-    g.strokeStyle = kind === "rooms" ? COLORS.WALL : SOFT_EDGE;
+    if (kind === "stairs") paintStair(g, z, r, v.scale);
+    g.lineWidth = 1;
+    g.strokeStyle = SOFT_EDGE;
+    g.setLineDash([]);
     g.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+  }
+
+  /** The room and street floors, edge to edge, before the grids and the walls. */
+  function fills(g, v, items) {
+    for (const item of items) {
+      if (item.kind !== "rooms" && item.kind !== "streets") continue;
+      const r = View.rectOf(Core.boxOf(item.kind, item.z), v);
+      g.fillStyle = zoneFill(item.kind, item.z);
+      g.fillRect(r.x, r.y, r.w, r.h);
+    }
+  }
+
+  /** Room walls, then the lighter street edges. Both sit on top of the grids. */
+  function walls(g, v, items) {
+    g.save();
+    g.lineCap = "butt";
+    g.setLineDash([]);
+    g.lineWidth = Paint.wallWidth(v.scale);
+    g.strokeStyle = COLORS.WALL;
+    g.beginPath();
+    for (const item of items) if (item.kind === "rooms") traceRoomWalls(g, v, item.z);
+    g.stroke();
+    g.restore();
+    for (const item of items) if (item.kind === "streets") paintStreetWall(g, v, item.z);
+  }
+
+  /** Doors, stairs, shafts, lifts, and trenches, drawn over the grid so they stay clean. */
+  function details(g, v, items) {
+    for (const item of items) {
+      if (item.kind === "rooms" || item.kind === "streets") continue;
+      zone(g, v, item);
+    }
   }
 
   // ---- the block grid ----
@@ -213,13 +341,15 @@
     };
   }
 
-  /** A faint grid of blocks over every zone but the lifts. */
+  /** A faint grid of blocks over room floors and street floors. */
   function cellGrid(g, v, items) {
-    g.strokeStyle = CELL_GRID;
+    g.strokeStyle = Paint.cellInk();
     g.lineWidth = 1;
+    g.lineCap = "butt";
+    g.setLineDash([]);
     g.beginPath();
     for (const item of items) {
-      if (item.kind === "lifts") continue;
+      if (item.kind !== "rooms" && item.kind !== "streets") continue;
       const box = Core.boxOf(item.kind, item.z);
       traceGrid(g, v, box, blockEdges(box, v));
     }
@@ -234,7 +364,7 @@
     const at = Array.isArray(z.label_at) ? z.label_at : [(z.x0 + z.x1) >> 1, (z.z0 + z.z1) >> 1];
     const room = View.rectOf(z, v);
     const cell = View.rectOf(cellBox(at[0], at[1]), v);
-    const size = Math.max(10, Math.min(15, sc * 1.6));
+    const size = Paint.labelSize(sc);
     Paint.setFont(g, size, true);
     g.textAlign = "center";
     g.textBaseline = "middle";
@@ -251,12 +381,36 @@
     if (g.measureText(tag).width < room.w - 6) Paint.halo(g, tag, cx, cell.y + cell.h / 2 + size, COLORS.MUTED);
   }
 
-  /** A street's name at its label cell, along the street or turned on its side. */
+  /** A center pulled back so a label of this half-width stays inside a span. */
+  function clampSpan(center, start, span, half) {
+    const lo = start + half + 2;
+    const hi = start + span - half - 2;
+    if (lo > hi) return start + span / 2;
+    return Math.min(Math.max(center, lo), hi);
+  }
+
+  /** A street's name, centered on its short side and on its label cell along its long side. */
   function streetLabel(g, v, z) {
+    const street = View.rectOf(z, v);
     const at = Array.isArray(z.label_at) ? z.label_at : [z.x0 + 1, (z.z0 + z.z1) >> 1];
-    const r = View.rectOf(cellBox(at[0], at[1]), v);
-    if (z.label_vertical) Paint.painted(g, z.label, r.x + r.w / 2, r.y + r.h / 2, true, v.scale);
-    else Paint.painted(g, z.label, r.x, r.y + r.h / 2, false, v.scale, "left");
+    const cell = View.rectOf(cellBox(at[0], at[1]), v);
+    const vertical = Boolean(z.label_vertical);
+    const along = vertical ? street.h : street.w;
+    const across = vertical ? street.w : street.h;
+    const size = Paint.fitLabel(g, z.label, Math.max(0, along - 4), v.scale, Math.max(0, across - 2));
+    if (!size) return;
+    const half = g.measureText(z.label).width / 2;
+    g.save();
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    if (vertical) {
+      g.translate(street.x + street.w / 2, clampSpan(cell.y + cell.h / 2, street.y, street.h, half));
+      g.rotate(-Math.PI / 2);
+      Paint.halo(g, z.label, 0, 0);
+    } else {
+      Paint.halo(g, z.label, clampSpan(cell.x + cell.w / 2, street.x, street.w, half), street.y + street.h / 2);
+    }
+    g.restore();
   }
 
   /** The name of a zone, for the kinds that show one on the plan. */
@@ -308,5 +462,7 @@
     for (const id of nearFloors()) ghostFloor(g, v, id);
   }
 
-  Object.assign(App.PaintZones, { zoneFill, traceGrid, zone, cellGrid, label, ghosts });
+  Object.assign(App.PaintZones, {
+    zoneFill, traceGrid, cellGrid, label, ghosts, fills, walls, details,
+  });
 })(window.App);

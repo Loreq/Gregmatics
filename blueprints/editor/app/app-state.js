@@ -17,6 +17,7 @@
   // Where the browser keeps the draft, the autosave switch, and a draft the file has moved on from.
   const DRAFT_KEY = "gregmatics:draft";
   const AUTOSAVE_KEY = "gregmatics:autosave";
+  const CHECK_UPDATES_KEY = "gregmatics:check-updates";
   const STALE_KEY = "gregmatics:stale";
 
   // Colors the editor draws with. The plan's own colors come from its palette and its rooms.
@@ -61,6 +62,8 @@
     savedText: "",
     // File → Settings. Off skips the timed save. Ctrl+S and File → Save still write.
     autosave: localStorage.getItem(AUTOSAVE_KEY) !== "off",
+    // File → Settings. Off skips the check that runs when the window opens. Help → Check for updates still runs.
+    checkUpdates: localStorage.getItem(CHECK_UPDATES_KEY) !== "off",
     planFile: "",
     planFiles: [],
     // Hash of the plan text, so a draft still matches the file after Save.
@@ -196,7 +199,7 @@
   showVersion();
 
   window.App = {
-    Core, BASE, CATALOG, CRAWL, DRAFT_KEY, AUTOSAVE_KEY, STALE_KEY, COLORS, ROOM_COLORS, RESIZABLE, CONTENTS, SIDE_NAMES,
+    Core, BASE, CATALOG, CRAWL, DRAFT_KEY, AUTOSAVE_KEY, CHECK_UPDATES_KEY, STALE_KEY, COLORS, ROOM_COLORS, RESIZABLE, CONTENTS, SIDE_NAMES,
     $, canvas, ctx, state,
     L, entranceFloor, layerFloor, roomLocked, snapshot, unsaved,
     status, make, button, plural,
@@ -205,7 +208,7 @@
     Sel: {}, History: {}, Files: {}, NewPlan: {}, Save: {}, View: {}, Space: {},
     Paint: {}, PaintZones: {}, PaintContents: {}, Overlay: {},
     Tools: {}, Hit: {}, Draw: {}, Place: {}, Edit: {}, Machines: {}, Clip: {}, Pointer: {}, Keys: {},
-    Dialogs: {}, FloorDialog: {}, Bounds: {}, Settings: {},
+    Dialogs: {}, FloorDialog: {}, Bounds: {}, Settings: {}, Update: {},
     Panels: {}, Lists: {}, Picker: {}, Stack: {}, Form: {}, Fields: {},
   };
 })();

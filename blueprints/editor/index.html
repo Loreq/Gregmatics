@@ -21,14 +21,22 @@
       <button id="settings" type="button" role="menuitem">Settings</button>
     </div>
   </div>
+  <div class="menu" data-menu="help">
+    <button type="button" class="menu-label" aria-expanded="false" aria-haspopup="menu" aria-controls="help-panel">Help</button>
+    <div id="help-panel" class="menu-panel" role="menu" hidden>
+      <button id="check-updates" type="button" role="menuitem">Check for updates</button>
+    </div>
+  </div>
 </nav>
 <header class="bar">
-  <div class="brand">
-    <img src="../../launcher/Gregmatics.ico" width="22" height="22" alt="">
-    <strong>Gregmatics</strong>
-    <span id="file-state" class="pill unsaved" hidden>Unsaved</span>
+  <div class="brand-row">
+    <div class="brand">
+      <img src="../../launcher/Gregmatics.ico" width="22" height="22" alt="">
+      <strong>Gregmatics</strong>
+      <span id="file-state" class="pill unsaved" hidden>Unsaved</span>
+    </div>
+    <div id="plan-title" class="plan-title"></div>
   </div>
-  <div id="plan-title" class="plan-title"></div>
   <div id="tools" class="tools" role="toolbar" aria-label="Tools"></div>
 </header>
 <div id="banner" class="banner" hidden></div>
@@ -57,16 +65,19 @@
     <label class="toggle"><input id="show-others" type="checkbox" checked> Passthrough</label>
     <label class="toggle"><input id="show-contents" type="checkbox" checked> Contents</label>
     <div class="group">
-      <button id="undo" type="button">Undo</button>
-      <button id="redo" type="button">Redo</button>
-      <button id="copy" type="button">Copy</button>
-      <button id="paste" type="button">Paste</button>
+      <button id="undo" type="button" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg></button>
+      <button id="redo" type="button" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      <button id="copy" type="button" aria-label="Copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/><path d="M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/></svg></button>
+      <button id="paste" type="button" aria-label="Paste"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
     </div>
   </div>
     <section id="picker" class="plan-only" hidden>
       <h2 id="picker-title">Place</h2>
       <input id="picker-search" type="search" placeholder="Search" autocomplete="off">
-      <ul id="picker-list" class="list picker"></ul>
+      <div id="picker-jump" role="group" hidden></div>
+      <div id="picker-frame">
+        <ul id="picker-list" class="list picker"></ul>
+      </div>
     </section>
     <section class="plan-only">
       <h2 id="sel-title">Nothing selected</h2>
@@ -152,6 +163,13 @@
           </span>
         </div>
       </section>
+      <section class="sheet-section" data-section="updates">
+        <h3>Updates</h3>
+        <label class="check-line">
+          <input id="check-on-launch" type="checkbox" checked>
+          Look for a newer release when Gregmatics opens.
+        </label>
+      </section>
     </div>
     <section class="sheet-section" data-section="bounds">
       <h3>Baseline</h3>
@@ -175,9 +193,11 @@
     <section class="sheet-section">
       <div class="sheet-row">
         <span>Name</span>
-        <input id="new-name" name="name" type="text" required autocomplete="off" aria-label="Floorplan name">
+        <span class="sheet-field">
+          <input id="new-name" name="name" type="text" required autocomplete="off" aria-label="Floorplan name">
+          <p id="new-file" class="file-preview"></p>
+        </span>
       </div>
-      <p id="new-file" class="file-preview"></p>
     </section>
     <section class="sheet-section">
       <h3>Bounds</h3>
@@ -197,6 +217,32 @@
       <button value="cancel" type="submit">Cancel</button>
       <button id="confirm-alt" value="alt" type="submit" hidden>Exit</button>
       <button id="confirm-ok" value="ok" type="submit" class="primary">Continue</button>
+    </menu>
+  </form>
+</dialog>
+
+<dialog id="update-dialog" aria-labelledby="update-text">
+  <form>
+    <div class="update-lead">
+      <p id="update-text" role="status"></p>
+      <button id="update-close" type="button" aria-label="Close">
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
+    <div id="update-detail" hidden>
+      <article id="update-notes">
+        <header class="update-head">
+          <div class="update-name">
+            <h2 id="update-title"></h2>
+            <button id="update-page" type="button" hidden><svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" focusable="false"><path d="M2.5 5h4.5V9.5H2.5z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 2.5H9.5V5.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 2.5L5.5 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>View release</button>
+          </div>
+          <p id="update-date" hidden></p>
+        </header>
+        <div id="update-body"></div>
+      </article>
+    </div>
+    <menu>
+      <button id="update-install" type="button" class="primary" hidden>Install and restart</button>
     </menu>
   </form>
 </dialog>
@@ -241,6 +287,7 @@
 <script src="app/dialogs/app-floor-dialog.js"></script>
 <script src="app/dialogs/app-bounds.js"></script>
 <script src="app/dialogs/app-settings.js"></script>
+<script src="app/dialogs/app-update.js"></script>
 <script src="app/panels/app-panels.js"></script>
 <script src="app/panels/app-lists.js"></script>
 <script src="app/panels/app-picker.js"></script>

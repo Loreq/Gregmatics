@@ -5,7 +5,7 @@
 
   const {
     CONTENTS, $, canvas, state, unsaved,
-    Sel, History, Files, NewPlan, Save, View, Space, Paint, Pointer, Keys, Clip, Dialogs, Settings, Panels, Picker,
+    Sel, History, Files, NewPlan, Save, View, Space, Paint, Pointer, Keys, Clip, Dialogs, Settings, Update, Panels, Picker,
   } = App;
 
   // ---- handlers too small for a file of their own ----
@@ -55,7 +55,7 @@
     canvas.addEventListener("wheel", Pointer.onWheel, { passive: false });
   }
 
-  /** The menu bar and the File menu. A press anywhere else closes the menu. */
+  /** The menu bar, the File menu, and Help. A press anywhere else closes the menu. */
   function listenToMenus() {
     document.querySelectorAll(".menubar .menu-label").forEach((label) => label.addEventListener("click", Panels.onMenuLabel));
     document.querySelector(".menubar").addEventListener("click", (event) => {
@@ -70,7 +70,18 @@
     $("revert").addEventListener("click", revert);
     $("png").addEventListener("click", Paint.exportPng);
     $("settings").addEventListener("click", Settings.open);
+    $("check-updates").addEventListener("click", () => Update.start());
     $("file-input").addEventListener("change", Files.onFileChosen);
+  }
+
+  /** Help → Check for updates, and the dialog that offers to install a newer release. */
+  function listenToUpdate() {
+    $("update-close").addEventListener("click", Update.close);
+    $("update-install").addEventListener("click", () => Update.install());
+    $("update-page").addEventListener("click", () => Update.openPage());
+    $("update-dialog").addEventListener("close", Update.onClose);
+    $("update-dialog").addEventListener("cancel", Update.onCancel);
+    $("update-dialog").querySelector("form").addEventListener("submit", (event) => event.preventDefault());
   }
 
   /** The Settings dialog. */
@@ -102,6 +113,7 @@
 
   listenToPlan();
   listenToMenus();
+  listenToUpdate();
   listenToSettings();
   listenToSidePanel();
   listenToWindow();

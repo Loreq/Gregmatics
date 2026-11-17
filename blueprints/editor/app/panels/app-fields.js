@@ -104,7 +104,7 @@
     F.toggle("Tier", Core.tierAt(rec, item.slot), open.map((t) => [t, t, Core.tierLabel(t)]), (tier) => History.change(() => {
       Core.setTier(rec, item.slot, tier);
     }));
-    F.pair("X, Z", [item.x, item.z], ([x, z]) => Machines.drop(item, x, z));
+    F.pair("Point", [item.x, item.z], ([x, z]) => Machines.drop(item, x, z));
     F.note(`Slot ${item.slot + 1} of ${Core.codesOf(rec).length} in row ${rec.id}${rec.title ? `, ${rec.title}` : ""}.`);
     F.actions([
       button("Select row", () => {
@@ -313,27 +313,33 @@
     control.querySelectorAll("input, select, button").forEach((el) => { el.disabled = true; });
   }
 
-  /** Two number boxes that set one pair of a record's edges, such as X0 and X1. */
-  function edgeField(F, kind, rec, labelText, low, high, values) {
-    return F.pair(labelText, values, ([a, c]) => History.change(() => {
-      Core.setBox(kind, rec, { ...Core.boxOf(kind, rec), [low]: a, [high]: c });
+  /** One point that slides the record. A content item joins the room it lands in. */
+  function pointField(F, kind, rec, x0, z0) {
+    F.pair("Point", [x0, z0], ([x, z]) => History.change(() => {
+      Core.moveZone(L(), kind, rec, x - x0, z - z0);
+      if (CONTENTS.has(kind)) Core.rehome(L(), kind, rec);
     }));
   }
 
-  /** The corner a record starts at, and its edges when its box can be dragged. A locked room's are greyed out. */
+  /** One corner of a box that can be resized. The other corner and the contents stay put. */
+  function cornerField(F, kind, rec, labelText, xKey, zKey, box) {
+    return F.pair(labelText, [box[xKey], box[zKey]], ([x, z]) => History.change(() => {
+      Core.setBox(kind, rec, { ...Core.boxOf(kind, rec), [xKey]: x, [zKey]: z });
+    }));
+  }
+
+  /** Where a record stands: one point, or both corners when it can be resized. A locked room's corners are greyed out. */
   function positionFields(F, kind, rec, box) {
-    if (kind === "lifts") {
-      F.pair("X, Z", [box.x0, box.z0], ([x, z]) => History.change(() => Core.moveZone(L(), kind, rec, x - box.x0, z - box.z0)));
+    if (!RESIZABLE.has(kind)) {
+      // A machine row's point is its start cell. A lift or a multiblock uses the low corner of its box.
+      const [x0, z0] = kind === "walls" ? [rec.x, rec.z] : [box.x0, box.z0];
+      pointField(F, kind, rec, x0, z0);
       return;
     }
-    const controls = [F.pair("Corner", [box.x0, box.z0], ([x, z]) => History.change(() => {
-      Core.moveZone(L(), kind, rec, x - box.x0, z - box.z0);
-      if (CONTENTS.has(kind)) Core.rehome(L(), kind, rec);
-    }))];
-    if (RESIZABLE.has(kind)) {
-      controls.push(edgeField(F, kind, rec, "X0, X1", "x0", "x1", [box.x0, box.x1]));
-      controls.push(edgeField(F, kind, rec, "Z0, Z1", "z0", "z1", [box.z0, box.z1]));
-    }
+    const controls = [
+      cornerField(F, kind, rec, "Low corner", "x0", "z0", box),
+      cornerField(F, kind, rec, "High corner", "x1", "z1", box),
+    ];
     if (kind === "rooms" && roomLocked(rec)) controls.forEach(freezeControl);
   }
 

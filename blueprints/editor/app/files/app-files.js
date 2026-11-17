@@ -5,7 +5,7 @@
   "use strict";
 
   const {
-    Core, BASE, CATALOG, DRAFT_KEY, AUTOSAVE_KEY, STALE_KEY, $, state, unsaved, status, button,
+    Core, BASE, CATALOG, DRAFT_KEY, AUTOSAVE_KEY, CHECK_UPDATES_KEY, STALE_KEY, $, state, unsaved, status, button,
     History, Save, Panels,
   } = App;
 
@@ -17,10 +17,14 @@
     plan_info: () => undefined,
     choose_folder: () => undefined,
     set_autosave: (enabled) => ({ enabled: Boolean(enabled) }),
+    set_check_updates: (enabled) => ({ enabled: Boolean(enabled) }),
     rename_plan: (name) => ({ name }),
     choose_plan: () => undefined,
     create_plan: (name, text) => ({ name, text }),
     open_plan: (name) => ({ name }),
+    check_update: () => undefined,
+    install_update: () => undefined,
+    open_release: () => undefined,
   };
 
   // ---- the desktop window ----
@@ -132,6 +136,10 @@
       state.autosave = info.autosave;
       localStorage.setItem(AUTOSAVE_KEY, info.autosave ? "on" : "off");
     }
+    if (typeof info.checkUpdates === "boolean") {
+      state.checkUpdates = info.checkUpdates;
+      localStorage.setItem(CHECK_UPDATES_KEY, info.checkUpdates ? "on" : "off");
+    }
     state.planFile = info.current || "";
     state.planFiles = info.plans || [];
   }
@@ -196,10 +204,19 @@
     Panels.setIdle(true);
   }
 
-  /** Load the plan when the page opens: from the desktop window's file when there is one, else from data.js. */
+  /** Load the plan when the page opens, then look for a newer release when that check is on. */
   async function boot() {
     if (booting || state.layout) return;
     booting = true;
+    try {
+      await openFirstPlan();
+    } finally {
+      App.Update.onLaunch();
+    }
+  }
+
+  /** Load the plan the window opens on. A missing plan leaves File → New. */
+  async function openFirstPlan() {
     if (!BASE || !BASE.catalog) {
       status("The plan could not be loaded.", true);
       return;
@@ -220,6 +237,8 @@
       }
       const autosaveBox = $("autosave");
       if (autosaveBox) autosaveBox.checked = state.autosave;
+      const updateBox = $("check-on-launch");
+      if (updateBox) updateBox.checked = state.checkUpdates;
       try {
         const disk = await api.read_layout();
         if (disk && disk.empty) {

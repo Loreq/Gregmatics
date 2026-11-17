@@ -8,12 +8,15 @@
     Sel, View, Paint, PaintZones, PaintContents, Tools, Hit, Draw, Place, Machines,
   } = App;
 
-  const HOVER_EDGE = "rgba(47, 93, 138, 0.8)";
+  // Hover is the selection ink, lighter, so it stays in the warm drawing.
+  const HOVER_ALPHA = 0.65;
   // How see-through a preview is: a box being drawn, and a thing being placed or carried.
   const SKETCH_ALPHA = 0.7;
   const PAD_PREVIEW_ALPHA = 0.82;
   const MACHINE_PREVIEW_ALPHA = 0.85;
   const HANDLE_SIZE = 8;
+  // Below this shorter side, a handle shrinks so the selection stroke does not eat it.
+  const HANDLE_FULL = 16;
 
   // ---- small pieces ----
 
@@ -22,12 +25,12 @@
     g.strokeRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
   }
 
-  /** A line of text just above a box's top left corner. */
+  /** A line of text just above a box, its left edge on the ring's outer left. */
   function tagAbove(g, r, text) {
     Paint.setFont(g, 12, true);
     g.textAlign = "left";
     g.textBaseline = "bottom";
-    Paint.halo(g, text, r.x, r.y - 6);
+    Paint.halo(g, text, r.x - 2, r.y - 6);
   }
 
   /** A box's size as text. */
@@ -42,8 +45,8 @@
     if (state.tool !== "select" || state.drag || !state.hover) return;
     const hit = Hit.at(state.hover[0], state.hover[1])[0];
     if (!hit || Sel.holds(hit)) return;
-    g.strokeStyle = HOVER_EDGE;
-    g.lineWidth = 1.5;
+    g.strokeStyle = Paint.hexAlpha(COLORS.INK, HOVER_ALPHA);
+    g.lineWidth = 1;
     g.setLineDash([3, 3]);
     ring(g, View.rectOf(Hit.boxOf(hit), v));
     g.setLineDash([]);
@@ -65,13 +68,23 @@
     };
   }
 
-  /** The eight squares a box is resized by. */
+  /** How big a handle is: 8px, or half the ring's shorter side when that ring is small. */
+  function handleSize(r) {
+    const shorter = Math.min(r.w, r.h) + 2;
+    return shorter >= HANDLE_FULL ? HANDLE_SIZE : shorter / 2;
+  }
+
+  /** The eight squares a box is resized by. Each is paper with a hairline, not the selection stroke. */
   function paintHandles(g, r) {
-    const half = HANDLE_SIZE / 2;
+    const size = handleSize(r);
+    if (size < 1) return;
+    const half = size / 2;
     g.fillStyle = COLORS.PAPER;
+    g.strokeStyle = COLORS.INK;
+    g.lineWidth = 1;
     for (const [hx, hy] of Hit.handlePoints(r)) {
-      g.fillRect(hx - half, hy - half, HANDLE_SIZE, HANDLE_SIZE);
-      g.strokeRect(hx - half, hy - half, HANDLE_SIZE, HANDLE_SIZE);
+      g.fillRect(hx - half, hy - half, size, size);
+      if (size >= 2) g.strokeRect(hx - half + 0.5, hy - half + 0.5, size - 1, size - 1);
     }
   }
 
@@ -143,6 +156,7 @@
     g.save();
     g.globalAlpha = PAD_PREVIEW_ALPHA;
     PaintContents.pad(g, v, pad);
+    PaintContents.padName(g, v, pad);
     g.restore();
   }
 
