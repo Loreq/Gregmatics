@@ -1,0 +1,653 @@
+[
+  {
+    "key": "aal",
+    "name": "Advanced Assembly Line",
+    "short": "AAL",
+    "tier": "IV",
+    "size": [
+      3,
+      5,
+      4
+    ],
+    "span": [
+      3,
+      3,
+      5,
+      16,
+      4,
+      4
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Advanced_Assembly_Line",
+    "note": "Length runs from 5 to 16 slices."
+  },
+  {
+    "key": "abs",
+    "name": "Alloy Blast Smelter",
+    "short": "ABS",
+    "tier": "IV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "pollution": 200,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Alloy_Blast_Smelter"
+  },
+  {
+    "key": "awd",
+    "name": "Amazon Warehousing Depot",
+    "short": "AWD",
+    "tier": "IV",
+    "size": [
+      3,
+      5,
+      3
+    ],
+    "pollution": 40,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Amazon_Warehousing_Depot"
+  },
+  {
+    "key": "al",
+    "name": "Assembly Line",
+    "short": "AL",
+    "tier": "IV",
+    "size": [
+      3,
+      5,
+      4
+    ],
+    "span": [
+      3,
+      3,
+      5,
+      16,
+      4,
+      4
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Assembly_Line",
+    "note": "Length runs from 5 to 16 slices."
+  },
+  {
+    "key": "bold",
+    "name": "Boldarnator",
+    "short": "BOLD",
+    "tier": "IV",
+    "size": [
+      5,
+      7,
+      5
+    ],
+    "pollution": 100,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Boldarnator"
+  },
+  {
+    "key": "cryo",
+    "name": "Cryogenic Freezer",
+    "short": "CRYO",
+    "tier": "IV",
+    "size": [
+      7,
+      5,
+      4
+    ],
+    "pollution": 500,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Cryogenic_Freezer"
+  },
+  {
+    "key": "dangote",
+    "name": "Dangote Distillus",
+    "short": "DANG",
+    "tier": "IV",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "span": [
+      3,
+      3,
+      3,
+      12
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Dangote_Distillus",
+    "note": "Height runs from 3 to 12. The page lists pollution as 0, 480 gibbl/s."
+  },
+  {
+    "key": "decay",
+    "name": "Decay Warehouse",
+    "short": "DECAY",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Decay_Warehouse"
+  },
+  {
+    "key": "dehp",
+    "name": "Deep Earth Heating Pump",
+    "short": "DEHP",
+    "tier": "IV",
+    "size": [
+      3,
+      3,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Deep_Earth_Heating_Pump"
+  },
+  {
+    "key": "density",
+    "name": "Density^2",
+    "short": "DENS",
+    "tier": "IV",
+    "size": [
+      7,
+      7,
+      9
+    ],
+    "pollution": 5000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Density%5E2"
+  },
+  {
+    "key": "digest",
+    "name": "Digester",
+    "short": "DIG",
+    "tier": "IV",
+    "size": [
+      7,
+      7,
+      4
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Digester"
+  },
+  {
+    "key": "drone",
+    "name": "Drone Centre",
+    "short": "DRONE",
+    "tier": "IV",
+    "size": [
+      11,
+      11,
+      4
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Drone_Centre"
+  },
+  {
+    "key": "ece",
+    "name": "Extreme Combustion Engine",
+    "short": "ECE",
+    "tier": "IV",
+    "size": [
+      5,
+      10,
+      5
+    ],
+    "pollution": 3840,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Extreme_Combustion_Engine"
+  },
+  {
+    "key": "eig",
+    "name": "Extreme Industrial Greenhouse",
+    "short": "EIG",
+    "tier": "IV",
+    "size": [
+      9,
+      7,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Extreme_Industrial_Greenhouse"
+  },
+  {
+    "key": "conjure",
+    "name": "Fountain of Conjuration",
+    "short": "CONJ",
+    "tier": "IV",
+    "size": [
+      7,
+      5,
+      3
+    ],
+    "share": true,
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Fountain_of_Conjuration"
+  },
+  {
+    "key": "htgr",
+    "name": "High Temperature Gas-Cooled Reactor",
+    "short": "HTGR",
+    "tier": "IV",
+    "size": [
+      16,
+      27,
+      15
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/High_Temperature_Gas-Cooled_Reactor"
+  },
+  {
+    "key": "hile",
+    "name": "Hyper-Intensity Laser Engraver",
+    "short": "HILE",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Hyper-Intensity_Laser_Engraver"
+  },
+  {
+    "key": "ichem",
+    "name": "Industrial Chemical Bath",
+    "short": "ICHEM",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      4
+    ],
+    "pollution": 400,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Chemical_Bath"
+  },
+  {
+    "key": "icut",
+    "name": "Industrial Cutting Factory",
+    "short": "ICUT",
+    "tier": "IV",
+    "size": [
+      3,
+      9,
+      4
+    ],
+    "pollution": 160,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Cutting_Factory"
+  },
+  {
+    "key": "ielec",
+    "name": "Industrial Electrolyzer",
+    "short": "IELEC",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "pollution": 300,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Electrolyzer"
+  },
+  {
+    "key": "iextr",
+    "name": "Industrial Extrusion Machine",
+    "short": "IEXTR",
+    "tier": "IV",
+    "size": [
+      4,
+      9,
+      4
+    ],
+    "pollution": 1000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Extrusion_Machine"
+  },
+  {
+    "key": "imix",
+    "name": "Industrial Mixing Machine",
+    "short": "IMIX",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      7
+    ],
+    "pollution": 800,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Mixing_Machine"
+  },
+  {
+    "key": "isledge",
+    "name": "Industrial Sledgehammer",
+    "short": "ISLEDGE",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      9
+    ],
+    "pollution": 250,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Sledgehammer"
+  },
+  {
+    "key": "iwire",
+    "name": "Industrial Wire Factory",
+    "short": "IWIRE",
+    "tier": "IV",
+    "size": [
+      3,
+      7,
+      3
+    ],
+    "pollution": 100,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Wire_Factory"
+  },
+  {
+    "key": "lesmelt",
+    "name": "Large Essentia Smeltery",
+    "short": "LESM",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "span": [
+      5,
+      9,
+      5,
+      5,
+      5,
+      5
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Essentia_Smeltery",
+    "note": "Pollution is listed as 0-2,200 gibbl/s."
+  },
+  {
+    "key": "lma",
+    "name": "Large Molecular Assembler",
+    "short": "LMA",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Molecular_Assembler"
+  },
+  {
+    "key": "lftr",
+    "name": "Liquid Fluoride Thorium Reactor",
+    "short": "LFTR",
+    "tier": "IV",
+    "size": [
+      7,
+      7,
+      4
+    ],
+    "pollution": 4000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Liquid_Fluoride_Thorium_Reactor"
+  },
+  {
+    "key": "mfe",
+    "name": "Magnetic Flux Exhibitor",
+    "short": "MFE",
+    "tier": "IV",
+    "size": [
+      7,
+      7,
+      6
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Magnetic_Flux_Exhibitor"
+  },
+  {
+    "key": "msolid",
+    "name": "Mass Solidifier",
+    "short": "MSOLID",
+    "tier": "IV",
+    "size": [
+      9,
+      5,
+      6
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Mass_Solidifier"
+  },
+  {
+    "key": "nspp",
+    "name": "Nuclear Salt Processing Plant",
+    "short": "NSPP",
+    "tier": "IV",
+    "size": [
+      3,
+      9,
+      5
+    ],
+    "pollution": 500,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Nuclear_Salt_Processing_Plant"
+  },
+  {
+    "key": "mt3662",
+    "name": "Precise Auto-Assembler MT-3662",
+    "short": "MT3662",
+    "tier": "IV",
+    "size": [
+      5,
+      9,
+      5
+    ],
+    "pollution": 780,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Precise_Auto-Assembler_MT-3662"
+  },
+  {
+    "key": "rfpp",
+    "name": "Reactor Fuel Processing Plant",
+    "short": "RFPP",
+    "tier": "IV",
+    "size": [
+      3,
+      3,
+      9
+    ],
+    "pollution": 4000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Reactor_Fuel_Processing_Plant"
+  },
+  {
+    "key": "rocketdyne",
+    "name": "Rocketdyne F-1A Engine",
+    "short": "RDYNE",
+    "tier": "IV",
+    "size": [
+      10,
+      3,
+      3
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Rocketdyne_F-1A_Engine",
+    "note": "Pollution is 1% of EU/t, in gibbl/s."
+  },
+  {
+    "key": "tboiler",
+    "name": "Thermal Boiler",
+    "short": "TBOIL",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Thermal_Boiler"
+  },
+  {
+    "key": "thd",
+    "name": "Thermic Heating Device",
+    "short": "THD",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      6
+    ],
+    "pollution": 1000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Thermic_Heating_Device"
+  },
+  {
+    "key": "thtr",
+    "name": "Thorium High Temperature Reactor",
+    "short": "THTR",
+    "tier": "IV",
+    "size": [
+      11,
+      11,
+      12
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Thorium_High_Temperature_Reactor"
+  },
+  {
+    "key": "tgs",
+    "name": "Tree Growth Simulator",
+    "short": "TGS",
+    "tier": "IV",
+    "size": [
+      7,
+      7,
+      7
+    ],
+    "pollution": 100,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Tree_Growth_Simulator"
+  },
+  {
+    "key": "ucfe",
+    "name": "Universal Chemical Fuel Engine",
+    "short": "UCFE",
+    "tier": "IV",
+    "size": [
+      13,
+      7,
+      7
+    ],
+    "muffler": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Universal_Chemical_Fuel_Engine",
+    "note": "Pollution is the square root of EU/t, in gibbl/s."
+  },
+  {
+    "key": "volcanus",
+    "name": "Volcanus",
+    "short": "VOLC",
+    "tier": "IV",
+    "size": [
+      3,
+      3,
+      4
+    ],
+    "pollution": 500,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Volcanus"
+  },
+  {
+    "key": "xlst",
+    "name": "XL Turbo Steam Turbine",
+    "short": "XLST",
+    "tier": "IV",
+    "size": [
+      29,
+      9,
+      9
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/XL_Turbo_Steam_Turbine"
+  },
+  {
+    "key": "yottank",
+    "name": "YOTTank",
+    "short": "YOT",
+    "tier": "IV",
+    "size": [
+      5,
+      5,
+      5
+    ],
+    "span": [
+      5,
+      5,
+      5,
+      19
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/YOTTank",
+    "note": "Height runs from 5 to 19."
+  },
+  {
+    "key": "zhuhai",
+    "name": "Zhuhai Fishing Port",
+    "short": "ZHUHAI",
+    "tier": "IV",
+    "size": [
+      11,
+      11,
+      4
+    ],
+    "pollution": 20,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Zhuhai_Fishing_Port"
+  },
+  {
+    "key": "zyngen",
+    "name": "Zyngen",
+    "short": "ZYNG",
+    "tier": "IV",
+    "size": [
+      3,
+      3,
+      5
+    ],
+    "pollution": 300,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Zyngen"
+  }
+]

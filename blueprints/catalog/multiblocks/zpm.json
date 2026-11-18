@@ -1,0 +1,233 @@
+[
+  {
+    "key": "atx",
+    "name": "Active Transformer",
+    "short": "ATX",
+    "tier": "ZPM",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Active_Transformer"
+  },
+  {
+    "key": "databank",
+    "name": "Data Bank",
+    "short": "DATA",
+    "tier": "ZPM",
+    "size": [
+      3,
+      5,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Data_Bank"
+  },
+  {
+    "key": "edup",
+    "name": "Elemental Duplicator",
+    "short": "EDUP",
+    "tier": "ZPM",
+    "size": [
+      9,
+      9,
+      6
+    ],
+    "pollution": 1000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Elemental_Duplicator"
+  },
+  {
+    "key": "efridge",
+    "name": "Endothermic Fridge",
+    "short": "EFR",
+    "tier": "ZPM",
+    "size": [
+      23,
+      23,
+      16
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Endothermic_Fridge"
+  },
+  {
+    "key": "einfuser",
+    "name": "Energy Infuser",
+    "short": "EINF",
+    "tier": "ZPM",
+    "size": [
+      3,
+      3,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Energy_Infuser"
+  },
+  {
+    "key": "ehearth",
+    "name": "Exothermic Hearth",
+    "short": "EXH",
+    "tier": "ZPM",
+    "size": [
+      23,
+      23,
+      43
+    ],
+    "pollution": 102400,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Exothermic_Hearth"
+  },
+  {
+    "key": "floc",
+    "name": "Flocculation Purification Unit",
+    "short": "FLOC",
+    "tier": "ZPM",
+    "size": [
+      8,
+      9,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Flocculation_Purification_Unit"
+  },
+  {
+    "key": "hipu",
+    "name": "Hot Isostatic Pressurization Unit",
+    "short": "HIPU",
+    "tier": "ZPM",
+    "size": [
+      7,
+      15,
+      10
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Hot_Isostatic_Pressurization_Unit"
+  },
+  {
+    "key": "lnr",
+    "name": "Large Naquadah Reactor",
+    "short": "LNR",
+    "tier": "ZPM",
+    "size": [
+      7,
+      7,
+      11
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Naquadah_Reactor"
+  },
+  {
+    "key": "lsaa",
+    "name": "Large Scale Auto-Assembler v1.01",
+    "short": "LSAA",
+    "tier": "ZPM",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "pollution": 500,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Scale_Auto-Assembler_v1.01"
+  },
+  {
+    "key": "linac",
+    "name": "Linear Accelerator",
+    "short": "LINAC",
+    "tier": "ZPM",
+    "size": [
+      19,
+      7,
+      7
+    ],
+    "span": [
+      19,
+      83,
+      7,
+      7,
+      7,
+      7
+    ],
+    "odd": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Linear_Accelerator",
+    "note": "Length is an odd number from 19 to 83."
+  },
+  {
+    "key": "phpu",
+    "name": "pH Neutralization Purification Unit",
+    "short": "PHPU",
+    "tier": "ZPM",
+    "size": [
+      5,
+      15,
+      6
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/PH_Neutralization_Purification_Unit"
+  },
+  {
+    "key": "sourcech",
+    "name": "Source Chamber",
+    "short": "SRCC",
+    "tier": "ZPM",
+    "size": [
+      6,
+      5,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Source_Chamber"
+  },
+  {
+    "key": "spin",
+    "name": "Spinmatron-2737",
+    "short": "SPIN",
+    "tier": "ZPM",
+    "size": [
+      17,
+      17,
+      17
+    ],
+    "pollution": 500,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Spinmatron-2737"
+  },
+  {
+    "key": "sync",
+    "name": "Synchrotron",
+    "short": "SYNC",
+    "tier": "ZPM",
+    "size": [
+      34,
+      36,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Synchrotron"
+  },
+  {
+    "key": "targetch",
+    "name": "Target Chamber",
+    "short": "TARG",
+    "tier": "ZPM",
+    "size": [
+      6,
+      5,
+      5
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Target_Chamber"
+  },
+  {
+    "key": "xlpt",
+    "name": "XL Turbo Plasma Turbine",
+    "short": "XLPT",
+    "tier": "ZPM",
+    "size": [
+      26,
+      9,
+      9
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/XL_Turbo_Plasma_Turbine"
+  }
+]

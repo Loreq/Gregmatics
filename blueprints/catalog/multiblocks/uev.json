@@ -1,0 +1,77 @@
+[
+  {
+    "key": "abppu",
+    "name": "Absolute Baryonic Perfection Purification Unit",
+    "short": "ABPPU",
+    "tier": "UEV",
+    "size": [
+      17,
+      17,
+      17
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Absolute_Baryonic_Perfection_Purification_Unit"
+  },
+  {
+    "key": "dtpf",
+    "name": "Dimensionally Transcendent Plasma Forge",
+    "short": "DTPF",
+    "tier": "UEV",
+    "size": [
+      33,
+      33,
+      24
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Dimensionally_Transcendent_Plasma_Forge"
+  },
+  {
+    "key": "exof",
+    "name": "Exo-Foundry",
+    "short": "EXOF",
+    "tier": "UEV",
+    "size": [
+      15,
+      15,
+      55
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Exo-Foundry"
+  },
+  {
+    "key": "nanochip",
+    "name": "Nanochip Assembly Complex",
+    "short": "NCHIP",
+    "tier": "UEV",
+    "size": [
+      63,
+      63,
+      49
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Nanochip_Assembly_Complex"
+  },
+  {
+    "key": "qft",
+    "name": "Quantum Force Transformer",
+    "short": "QFT",
+    "tier": "UEV",
+    "size": [
+      15,
+      15,
+      21
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Quantum_Force_Transformer"
+  },
+  {
+    "key": "rddpu",
+    "name": "Residual Decontaminant Degasser Purification Unit",
+    "short": "RDDPU",
+    "tier": "UEV",
+    "size": [
+      17,
+      17,
+      25
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Residual_Decontaminant_Degasser_Purification_Unit"
+  }
+]

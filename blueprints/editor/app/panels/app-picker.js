@@ -1,18 +1,18 @@
-/* The catalog picker, shown while a place tool is in hand: machines by group, or multiblocks by
-   tier. The item picked is kept in state.pick, one for each tool. The jump choice stays in this file. */
+/* The catalog picker, shown while a place tool is in hand. The list is one flat sequence.
+   Each tool keeps its own sort while the page is open. */
 (function (App) {
   "use strict";
 
-  const { Core, CATALOG, $, canvas, state, L, Paint, Tools, Lists } = App;
+  const { Core, CATALOG, $, canvas, state, L, Paint, Tools } = App;
 
-  // The group for multiblocks with no tier of their own, such as altars.
-  const NO_TIER = "Other";
   // What the search box asks for. A multiblock search also matches the catalog key.
   const MACHINE_QUERY = "Name or code";
   const MULTI_QUERY = "Name or tag";
 
-  // Jump choice for machines and for pads. Null is the first visit and follows the item in hand.
-  const jumpMemory = { machines: null, pads: null };
+  // Sort for machines and for pads. Each starts at A to Z and lasts while the page is open.
+  const sortMemory = { machines: "az", pads: "az" };
+  // The sort menu is open. Display only, same lifetime as sortMemory.
+  let sortOpen = false;
 
   // ---- rows ----
 
@@ -105,6 +105,141 @@
     }
   }
 
+  // ---- sort ----
+
+  /** The place tool the sort memory belongs to. */
+  function sortTool() {
+    return state.tool === "machines" ? "machines" : "pads";
+  }
+
+  /** The sort this place tool is using. */
+  function sortMode() {
+    return sortMemory[sortTool()];
+  }
+
+  /** Remember a sort for this place tool and show the list again. */
+  function chooseSort(mode) {
+    sortMemory[sortTool()] = mode;
+    closeSort();
+    render();
+    $("picker-list").scrollTop = 0;
+    $("picker-sort").focus();
+  }
+
+  /** Order two names, then the code or the key. */
+  function byName(a, b) {
+    const names = a.name.localeCompare(b.name);
+    if (names) return names;
+    return a.id.localeCompare(b.id);
+  }
+
+  /** A machine's sort rank. A blank tier sorts after the voltage list. */
+  function tierRank(row) {
+    const rank = Core.voltageRank(row.machine ? "" : row.spec.tier);
+    return rank < 0 ? Core.VOLTAGE.length : rank;
+  }
+
+  /** The block count a catalog row sorts by. A machine is one block. */
+  function blockCount(row) {
+    if (row.machine) return 1;
+    const size = row.spec.size;
+    return size[0] * size[1] * size[2];
+  }
+
+  /** Order two catalog rows for the sort in hand. */
+  function compareRows(a, b) {
+    const mode = sortMode();
+    if (mode === "za") return -byName(a, b);
+    if (mode === "tier") return tierRank(a) - tierRank(b) || byName(a, b);
+    if (mode === "size") return blockCount(a) - blockCount(b) || byName(a, b);
+    return byName(a, b);
+  }
+
+  /** The sort menu's choice buttons. */
+  function sortChoices() {
+    return [...$("picker-sort-menu").querySelectorAll("button")];
+  }
+
+  /** The words on the sort button for a mode. */
+  function sortLabel(mode) {
+    const item = sortChoices().find((choice) => choice.dataset.mode === mode);
+    return item ? item.textContent : "A to Z";
+  }
+
+  /** Show the sort button and its menu for the tool in hand. */
+  function paintSort() {
+    const mode = sortMode();
+    const label = sortLabel(mode);
+    const button = $("picker-sort");
+    $("picker-sort-label").textContent = label;
+    button.setAttribute("aria-label", `Sort, ${label}`);
+    button.setAttribute("aria-expanded", sortOpen ? "true" : "false");
+    $("picker-sort-menu").hidden = !sortOpen;
+    for (const item of sortChoices()) {
+      item.setAttribute("aria-checked", item.dataset.mode === mode ? "true" : "false");
+    }
+  }
+
+  /** Open or close the sort menu. */
+  function toggleSort() {
+    sortOpen = !sortOpen;
+    paintSort();
+    if (!sortOpen) return;
+    const current = sortChoices().find((item) => item.dataset.mode === sortMode());
+    if (current) current.focus();
+  }
+
+  /** Close the sort menu. */
+  function closeSort() {
+    if (!sortOpen) return;
+    sortOpen = false;
+    paintSort();
+  }
+
+  /** Up and Down move through the open sort menu. */
+  function moveSort(event) {
+    const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+    if (!step || !sortOpen || !$("picker-sort-wrap").contains(event.target)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const items = sortChoices();
+    const index = items.indexOf(event.target);
+    const next = index < 0 ? items[step > 0 ? 0 : items.length - 1] : items[index + step];
+    if (next) next.focus();
+  }
+
+  /** Keys for the open sort menu. */
+  function onSortKey(event) {
+    if (event.key !== "Escape") {
+      moveSort(event);
+      return;
+    }
+    if (!sortOpen || document.querySelector("dialog[open]")) return;
+    if (!$("picker-sort-wrap").contains(event.target)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    closeSort();
+    $("picker-sort").focus();
+  }
+
+  /** A press off the sort button and its menu closes the menu. */
+  function onSortPointer(event) {
+    if (!sortOpen) return;
+    const hit = event.target;
+    if ($("picker-sort").contains(hit) || $("picker-sort-menu").contains(hit)) return;
+    closeSort();
+  }
+
+  /** A catalog row the sorts compare. */
+  function sortRow(id, spec, machine) {
+    return { id, name: spec.name, spec, machine };
+  }
+
+  /** Whether a search query is empty or sits in this text. */
+  function queryHits(q, text) {
+    return !q || text.toLowerCase().includes(q);
+  }
+
   // ---- machines ----
 
   /** Whether the plan is still below LV, where electric machines are closed. */
@@ -112,199 +247,48 @@
     return Core.voltageRank(Core.planTier(L())) < Core.voltageRank("LV");
   }
 
-  /** The machines that match a search, by group, as [code, spec] pairs. */
-  function machinesByGroup(q) {
-    const byGroup = {};
-    for (const [code, spec] of Object.entries(CATALOG.singles)) {
-      if (q && !`${code} ${spec.name}`.toLowerCase().includes(q)) continue;
-      (byGroup[spec.group] = byGroup[spec.group] || []).push([code, spec]);
-    }
-    return byGroup;
-  }
-
-  /** List the machines, a group at a time. A chosen group starts open, else the picked machine's group does. */
-  function listMachines(list, q, narrow) {
+  /** List the machines the plan tier allows, in the sort in hand. */
+  function listMachines(list, q) {
     if (belowTierOne()) {
       list.append(hintRow("Electric machines start at Tier 1."));
       return;
     }
     const colors = L().palette.groups;
-    const byGroup = machinesByGroup(q);
-    const picked = CATALOG.singles[state.pick.machines];
-    for (const [group, label] of Object.entries(CATALOG.groups)) {
-      const rows = byGroup[group];
-      if (!rows || (narrow && group !== narrow)) continue;
-      const mine = Boolean(picked && picked.group === group);
-      if (!Lists.group(list, `machine:${group}`, label, rows.length, Boolean(narrow) || mine, q)) continue;
-      for (const [code, spec] of rows) list.append(markedItem(code, spec.name, code, colors[group], "", q));
-    }
+    const rows = Object.entries(CATALOG.singles)
+      .filter(([code, spec]) => queryHits(q, `${code} ${spec.name}`))
+      .map(([code, spec]) => sortRow(code, spec, true))
+      .sort(compareRows);
+    for (const row of rows) list.append(markedItem(row.id, row.name, row.id, colors[row.spec.group], "", q));
   }
 
   // ---- multiblocks ----
 
-  /** The tier a multiblock is listed under. */
-  function tierOf(spec) {
-    return spec && spec.tier && spec.tier !== "-" ? spec.tier : NO_TIER;
-  }
-
-  /** The multiblocks within the plan's tier, by name, as [key, spec] pairs. */
-  function openMultis(cap) {
-    return Object.entries(CATALOG.multis)
-      .filter(([, spec]) => Core.multiOpen(spec, cap))
-      .sort((a, b) => a[1].name.localeCompare(b[1].name));
-  }
-
-  /** The multiblocks that match a search, by tier. */
-  function multisByTier(entries, q) {
-    const byTier = new Map();
-    for (const entry of entries) {
-      if (q && !`${entry[0]} ${entry[1].short} ${entry[1].name}`.toLowerCase().includes(q)) continue;
-      const tier = tierOf(entry[1]);
-      if (!byTier.has(tier)) byTier.set(tier, []);
-      byTier.get(tier).push(entry);
-    }
-    return byTier;
-  }
-
-  /** Drop a multiblock the plan tier has closed, and take the first one still open. */
+  /** Keep the pad in hand when the plan tier allows it, else the first open catalog key. */
   function settlePad() {
-    const entries = openMultis(Core.planTier(L()));
-    if (state.pick.pads && !entries.some(([key]) => key === state.pick.pads)) {
-      state.pick.pads = entries[0] ? entries[0][0] : "";
-    }
-  }
-
-  /** List the multiblocks, a tier at a time. A chosen tier starts open, else the picked tier and the plan tier do. */
-  function listMultis(list, q, narrow) {
     const cap = Core.planTier(L());
+    const held = CATALOG.multis[state.pick.pads];
+    if (held && Core.multiOpen(held, cap)) return;
+    for (const [key, spec] of Object.entries(CATALOG.multis)) {
+      if (!Core.multiOpen(spec, cap)) continue;
+      state.pick.pads = key;
+      return;
+    }
+  }
+
+  /** Catalog multiblocks the plan tier allows. */
+  function listedMultis() {
+    const cap = Core.planTier(L());
+    return Object.entries(CATALOG.multis).filter(([, spec]) => Core.multiOpen(spec, cap));
+  }
+
+  /** List the multiblocks the plan tier allows, in the sort in hand. */
+  function listMultis(list, q) {
     settlePad();
-    const entries = openMultis(cap);
-    const byTier = multisByTier(entries, q);
-    const pickedTier = tierOf(CATALOG.multis[state.pick.pads]);
-    for (const tier of [...Core.SELECTABLE, NO_TIER]) {
-      const rows = byTier.get(tier);
-      if (!rows || (narrow && tier !== narrow)) continue;
-      const mine = tier === pickedTier || tier === cap;
-      if (!Lists.group(list, `multi:${tier}`, Core.tierLabel(tier), rows.length, Boolean(narrow) || mine, q)) continue;
-      for (const [key, spec] of rows) list.append(markedItem(key, spec.name, spec.short, null, sizeLabel(spec), q));
-    }
-  }
-
-  // ---- jump row ----
-
-  /** The place tool the jump memory belongs to. */
-  function toolKey() {
-    return state.tool === "machines" ? "machines" : "pads";
-  }
-
-  /** The group of the machine in hand, when there is one. */
-  function groupInHand() {
-    const spec = CATALOG.singles[state.pick.machines];
-    return spec ? spec.group : "";
-  }
-
-  /** All, then each catalog group that holds a machine. */
-  function machineJumps() {
-    const jumps = [{ id: "all", label: "All" }];
-    const byGroup = machinesByGroup("");
-    const colors = L().palette.groups;
-    for (const [group, label] of Object.entries(CATALOG.groups)) {
-      const rows = byGroup[group];
-      if (!rows) continue;
-      const jump = { id: group, label, aria: `${label}, ${rows.length}` };
-      if (colors[group]) jump.color = colors[group];
-      jumps.push(jump);
-    }
-    return jumps;
-  }
-
-  /** How many open multiblocks each tier holds. */
-  function tierCounts(entries) {
-    const counts = new Map();
-    for (const [, spec] of entries) {
-      const tier = tierOf(spec);
-      counts.set(tier, (counts.get(tier) || 0) + 1);
-    }
-    return counts;
-  }
-
-  /** All, then each tier that has an open multiblock, then Other. */
-  function multiJumps() {
-    const jumps = [{ id: "all", label: "All" }];
-    const counts = tierCounts(openMultis(Core.planTier(L())));
-    for (const tier of [...Core.SELECTABLE, NO_TIER]) {
-      if (!counts.has(tier)) continue;
-      jumps.push({ id: tier, label: tier, aria: `${Core.tierLabel(tier)}, ${counts.get(tier)}` });
-    }
-    return jumps;
-  }
-
-  /** The item in hand, when its group or tier is on the row. Otherwise All. */
-  function handOnRow(ids) {
-    const hand = state.tool === "machines" ? groupInHand() : tierOf(CATALOG.multis[state.pick.pads]);
-    return ids.includes(hand) ? hand : "all";
-  }
-
-  /** The pressed jump for this tool. A choice that has left the row becomes All. */
-  function keptChoice(jumps) {
-    const saved = jumpMemory[toolKey()];
-    const ids = jumps.map((jump) => jump.id);
-    if (saved == null) return handOnRow(ids);
-    if (ids.includes(saved)) return saved;
-    jumpMemory[toolKey()] = "all";
-    return "all";
-  }
-
-  /** Hide the jump row while the tier gate is showing. */
-  function hideJump() {
-    const row = $("picker-jump");
-    row.hidden = true;
-    row.replaceChildren();
-  }
-
-  /** One jump button. A group chip uses the palette color already loaded. */
-  function jumpButton(jump, pressed) {
-    const button = document.createElement("button");
-    button.type = "button";
-    if (jump.color) button.append(colorChip(jump.color));
-    button.append(document.createTextNode(jump.label));
-    button.setAttribute("aria-pressed", pressed ? "true" : "false");
-    if (jump.aria) button.setAttribute("aria-label", jump.aria);
-    button.addEventListener("click", () => chooseJump(jump.id));
-    return button;
-  }
-
-  /** Draw the jump row. Nothing is pressed while a search is typed. */
-  function drawJump(jumps, pressed) {
-    const row = $("picker-jump");
-    row.hidden = false;
-    row.replaceChildren();
-    for (const jump of jumps) row.append(jumpButton(jump, jump.id === pressed));
-  }
-
-  /** Remember a jump, clear the search, open that section, and show it. */
-  function chooseJump(id) {
-    const keep = $("picker-jump").contains(document.activeElement);
-    jumpMemory[toolKey()] = id;
-    state.search = "";
-    if (id !== "all") state.openLists[`${state.tool === "machines" ? "machine" : "multi"}:${id}`] = true;
-    render();
-    if (!keep) return;
-    const pressed = $("picker-jump").querySelector('[aria-pressed="true"]');
-    if (pressed) pressed.focus();
-  }
-
-  /** Draw the jump row and return the group or tier that narrows an empty search. */
-  function fillJump(machines, q) {
-    if (machines && belowTierOne()) {
-      hideJump();
-      return null;
-    }
-    if (!machines) settlePad();
-    const jumps = machines ? machineJumps() : multiJumps();
-    const choice = keptChoice(jumps);
-    drawJump(jumps, q ? null : choice);
-    return q || choice === "all" ? null : choice;
+    const rows = listedMultis()
+      .filter(([key, spec]) => queryHits(q, `${key} ${spec.short} ${spec.name}`))
+      .map(([key, spec]) => sortRow(key, spec, false))
+      .sort(compareRows);
+    for (const row of rows) list.append(markedItem(row.id, row.name, row.spec.short, null, sizeLabel(row.spec), q));
   }
 
   // ---- the panel ----
@@ -318,47 +302,30 @@
     if (search.value !== state.search) search.value = state.search;
   }
 
-  /** Bring a selected row into the list. A stuck header stays above it. */
-  function revealRow(list, row) {
-    const listBox = list.getBoundingClientRect();
-    const rowBox = row.getBoundingClientRect();
-    const head = list.querySelector("li.head");
-    const cover = head ? head.getBoundingClientRect().height : 0;
-    if (rowBox.top < listBox.top + cover) list.scrollTop -= listBox.top + cover - rowBox.top;
-    else if (rowBox.bottom > listBox.bottom) list.scrollTop += rowBox.bottom - listBox.bottom;
-  }
-
-  /** A search starts at the top. One open section shows the row in hand. */
-  function placeList(list, q, narrow) {
-    if (q) {
-      list.scrollTop = 0;
-      return;
-    }
-    if (!narrow) return;
-    const selected = list.querySelector("li.selected");
-    if (!selected) {
-      list.scrollTop = 0;
-      return;
-    }
-    revealRow(list, selected);
+  /** A search starts the list at the top. */
+  function placeList(list, q) {
+    if (q) list.scrollTop = 0;
   }
 
   /** Show the picker for the tool in hand, or hide it when the tool places nothing. */
   function render() {
     const placing = Tools.current().place;
     $("picker").hidden = !placing;
-    if (!placing) return;
+    if (!placing) {
+      closeSort();
+      return;
+    }
     const machines = state.tool === "machines";
     $("picker-title").textContent = machines ? "Machine" : "Multiblock";
     paintSearch(machines);
+    paintSort();
     const list = $("picker-list");
     list.innerHTML = "";
     const q = state.search.trim().toLowerCase();
-    const narrow = fillJump(machines, q);
-    if (machines) listMachines(list, q, narrow);
-    else listMultis(list, q, narrow);
+    if (machines) listMachines(list, q);
+    else listMultis(list, q);
     if (!list.children.length) list.append(hintRow("Nothing matches."));
-    placeList(list, q, narrow);
+    placeList(list, q);
   }
 
   /** Something was typed in the search box. */
@@ -395,31 +362,13 @@
     canvas.focus();
   }
 
-  /** Which way an arrow key steps along the jump row. */
-  function jumpStep(key) {
-    if (key === "ArrowRight" || key === "ArrowDown") return 1;
-    if (key === "ArrowLeft" || key === "ArrowUp") return -1;
-    return 0;
-  }
-
-  /** Arrow keys move along the jump row and do not move the plan. */
-  function onJumpKey(event) {
-    const step = jumpStep(event.key);
-    if (!step) return;
-    const buttons = [...event.currentTarget.querySelectorAll("button")];
-    const current = event.target.closest("button");
-    const index = buttons.indexOf(current);
-    if (index < 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const next = buttons[index + step];
-    if (next) next.focus();
-  }
-
-  /** Listen for keys on the search box and the jump row. */
+  /** Listen for the search box and the sort menu. */
   function listen() {
     $("picker-search").addEventListener("keydown", onSearchKey);
-    $("picker-jump").addEventListener("keydown", onJumpKey);
+    $("picker-sort").addEventListener("click", toggleSort);
+    for (const item of sortChoices()) item.addEventListener("click", () => chooseSort(item.dataset.mode));
+    document.addEventListener("keydown", onSortKey, true);
+    document.addEventListener("pointerdown", onSortPointer);
   }
 
   listen();

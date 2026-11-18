@@ -1,0 +1,135 @@
+[
+  {
+    "key": "beccf",
+    "name": "Bose-Einstein Condensate Containment Field",
+    "short": "BECCF",
+    "tier": "UIV",
+    "size": [
+      45,
+      45,
+      17
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Bose-Einstein_Condensate_Containment_Field"
+  },
+  {
+    "key": "becea",
+    "name": "Bose-Einstein Condensate Entanglement Apparatus",
+    "short": "BECEA",
+    "tier": "UIV",
+    "size": [
+      34,
+      19,
+      19
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Bose-Einstein_Condensate_Entanglement_Apparatus"
+  },
+  {
+    "key": "becmg",
+    "name": "Bose-Einstein Condensate Maxwell Gate",
+    "short": "BECMG",
+    "tier": "UIV",
+    "size": [
+      11,
+      17,
+      11
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Bose-Einstein_Condensate_Maxwell_Gate"
+  },
+  {
+    "key": "becoa",
+    "name": "Bose-Einstein Condensate Observation Array",
+    "short": "BECOA",
+    "tier": "UIV",
+    "size": [
+      31,
+      61,
+      31
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Bose-Einstein_Condensate_Observation_Array"
+  },
+  {
+    "key": "bectn",
+    "name": "Bose-Einstein Condensate Teleportation Node",
+    "short": "BECTN",
+    "tier": "UIV",
+    "size": [
+      13,
+      7,
+      23
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Bose-Einstein_Condensate_Teleportation_Node"
+  },
+  {
+    "key": "dyson",
+    "name": "Dyson Swarm Ground Unit",
+    "short": "DYSON",
+    "tier": "UIV",
+    "size": [
+      16,
+      16,
+      20
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Dyson_Swarm_Ground_Unit"
+  },
+  {
+    "key": "fotg",
+    "name": "Forge of the Gods",
+    "short": "FOTG",
+    "tier": "UIV",
+    "size": [
+      186,
+      127,
+      29
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Forge_of_the_Gods"
+  },
+  {
+    "key": "pbhcf",
+    "name": "Pseudostable Black Hole Containment Field",
+    "short": "PBHCF",
+    "tier": "UIV",
+    "size": [
+      35,
+      35,
+      33
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Pseudostable_Black_Hole_Containment_Field"
+  },
+  {
+    "key": "ssass",
+    "name": "Semi-Stable Antimatter Stabilization Sequencer",
+    "short": "SSASS",
+    "tier": "UIV",
+    "size": [
+      47,
+      53,
+      53
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Semi-Stable_Antimatter_Stabilization_Sequencer"
+  },
+  {
+    "key": "slam",
+    "name": "Shielded Lagrangian Annihilation Matrix",
+    "short": "SLAM",
+    "tier": "UIV",
+    "size": [
+      35,
+      35,
+      43
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Shielded_Lagrangian_Annihilation_Matrix"
+  },
+  {
+    "key": "tpm",
+    "name": "Transcendent Plasma Mixer",
+    "short": "TPM",
+    "tier": "UIV",
+    "size": [
+      5,
+      5,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Transcendent_Plasma_Mixer"
+  }
+]

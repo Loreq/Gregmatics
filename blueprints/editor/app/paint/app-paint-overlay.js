@@ -160,10 +160,22 @@
     g.restore();
   }
 
+  /** A drag that has moved its machines, as [dx, dz], or null. */
+  function carriedDelta() {
+    if (!state.drag || !state.drag.machines || !state.drag.machines.length) return null;
+    const delta = Machines.delta(state.drag);
+    return delta && (delta[0] || delta[1]) ? delta : null;
+  }
+
+  /** The placement under the pointer, or null when the preview is not a placement. */
+  function placement() {
+    if (state.draw || carriedDelta()) return null;
+    if (!Tools.byId(state.tool).place) return null;
+    return Place.placement();
+  }
+
   /** What a place tool would put under the pointer, ringed green where it fits and dashed rust where it does not. */
-  function paintPlacement(g, v) {
-    const p = Tools.byId(state.tool).place && Place.placement();
-    if (!p) return;
+  function paintPlacement(g, v, p) {
     if (p.kind === "pads") paintPadPreview(g, v, p);
     else PaintContents.machine(g, v, p.code, p.face, p.box.x0, p.box.z0, MACHINE_PREVIEW_ALPHA);
     g.strokeStyle = p.fits ? COLORS.GOOD : COLORS.RUST;
@@ -175,18 +187,17 @@
 
   /** The preview for whatever is going on: a box being drawn, machines being carried, or a thing being placed. */
   function paintPreview(g, v) {
+    const placed = placement();
+    if (placed) {
+      paintPlacement(g, v, placed);
+      return;
+    }
     if (state.draw) {
       paintSketch(g, v);
       return;
     }
-    if (state.drag && state.drag.machines && state.drag.machines.length) {
-      const delta = Machines.delta(state.drag);
-      if (delta[0] || delta[1]) {
-        paintCarried(g, v, delta);
-        return;
-      }
-    }
-    paintPlacement(g, v);
+    const delta = carriedDelta();
+    if (delta) paintCarried(g, v, delta);
   }
 
   /** Paint the hover, the selection, and the preview, in that order. */
@@ -196,5 +207,5 @@
     paintPreview(g, v);
   }
 
-  Object.assign(App.Overlay, { paint });
+  Object.assign(App.Overlay, { paint, placement });
 })(window.App);

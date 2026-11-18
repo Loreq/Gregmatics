@@ -1,20 +1,20 @@
 /* Painting the plan. The floor is painted once onto an offscreen canvas, the plate, and kept until
-   the plan, the floor, or the view changes. Each frame copies the plate and paints what follows the
-   pointer over it: the hover, the selection, and the preview. Every painter takes the 2D context `g`
-   and the view `v` it paints through. */
+   the plan, the floor, or the view changes. Each frame copies the plate, strokes the pollution
+   border, then paints what follows the pointer: the hover, the selection, and the preview.
+   Every painter takes the 2D context `g` and the view `v` it paints through. */
 (function (App) {
   "use strict";
 
   const {
-    Core, COLORS, canvas, ctx, state, L, layerFloor, status,
-    View, PaintZones, PaintContents, Overlay, Draw, Files,
+    Core, CATALOG, COLORS, canvas, ctx, state, L, layerFloor, status,
+    View, PaintZones, PaintContents, Overlay, Sel, Draw, Files,
   } = App;
 
   const FONT = "Segoe UI, sans-serif";
   const BACKDROP = "#2c2622";
   const CHUNK_LINE = "rgba(150, 132, 108, 0.45)";
-  const DIRTY_FILL = "rgba(172, 78, 50, 0.07)";
-  const DIRTY_EDGE = "rgba(172, 78, 50, 0.8)";
+  // The pollution border. This stroke is its only use.
+  const HOME_CHUNK = COLORS.MUTED;
   const OUTSIDE_SHADE = "rgba(12, 10, 8, 0.42)";
   const SPAN_EDGE = "rgba(243, 230, 212, 0.92)";
   const SPAN_PEN = "#e0c4a4";
@@ -118,13 +118,6 @@
 
   // ---- the ground under the floor ----
 
-  /** The box around the dirty chunks, or null when the plan has none. */
-  function dirtyBox() {
-    const names = L().site.dirty;
-    if (!names.length) return null;
-    return Core.unionBoxes(names.map((n) => Core.chunkBounds(L(), n)));
-  }
-
   /** Whether multiblocks, machines, and areas are painted. A tool that places them always shows them. */
   function showContents() {
     return state.show.contents || state.tool === "pads" || state.tool === "machines" || state.tool === "marks";
@@ -155,27 +148,6 @@
       const py = View.blockY(z, v) + 0.5;
       line(g, all.x, py, all.x + all.w, py);
     }
-  }
-
-  /** A tint over the chunks where pollution is allowed. The dash is drawn later, over the chunk lines. */
-  function paintDirty(g, v) {
-    const dirty = dirtyBox();
-    if (!dirty) return;
-    const r = View.rectOf(dirty, v);
-    g.fillStyle = DIRTY_FILL;
-    g.fillRect(r.x, r.y, r.w, r.h);
-  }
-
-  /** The dashed edge of the dirty chunks, drawn after the chunk lines so those lines do not cross it. */
-  function paintDirtyEdge(g, v) {
-    const dirty = dirtyBox();
-    if (!dirty) return;
-    const r = View.rectOf(dirty, v);
-    g.setLineDash([9, 6]);
-    g.strokeStyle = DIRTY_EDGE;
-    g.lineWidth = 2;
-    g.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-    g.setLineDash([]);
   }
 
   /** Shade the four strips of a rectangle that lie outside a hole in it. */
@@ -298,13 +270,11 @@
     const items = Core.zonesOn(L(), state.layer);
     g.save();
     const all = paintGround(g, v);
-    paintDirty(g, v);
     paintSpan(g, v);
     if (state.show.others) PaintZones.ghosts(g, v);
     PaintZones.fills(g, v, items);
     if (v.scale >= GRID_FROM) PaintZones.cellGrid(g, v, items);
-    paintChunkLines(g, v, all);
-    paintDirtyEdge(g, v);
+    if (state.showChunkGrid) paintChunkLines(g, v, all);
     PaintZones.walls(g, v, items);
     PaintZones.details(g, v, items);
     if (showContents() && !Core.isCrawlLayer(L(), state.layer)) PaintContents.paint(g, v);
@@ -330,7 +300,7 @@
   /** Everything the plate's picture depends on, as one string. */
   function plateStamp(v, dpr) {
     return [
-      state.layer, state.show.others, showContents(),
+      state.layer, state.show.others, state.showChunkGrid, showContents(),
       v.scale, v.ox, v.oy, v.width, v.height, dpr, plateRev,
     ].join("|");
   }
@@ -351,7 +321,142 @@
     plateKey = key;
   }
 
-  /** Paint the canvas now: the plate, then the hover, the selection, and the preview. */
+  // ---- the pollution border ----
+
+  /** One directed side of the border, from one corner to the next. */
+  function pushEdge(edges, x0, z0, x1, z1) {
+    const key = `${x0},${z0}`;
+    const ends = edges.get(key);
+    if (ends) ends.push({ x: x1, z: z1 });
+    else edges.set(key, [{ x: x1, z: z1 }]);
+  }
+
+  /** East, south, west, or north, as 0 through 3. */
+  function edgeDir(dx, dz) {
+    if (dx > 0) return 0;
+    if (dz > 0) return 1;
+    if (dx < 0) return 2;
+    return 3;
+  }
+
+  /** The next corner, preferring the sharpest right turn so the inside stays on the right. */
+  function chooseNext(prevX, prevZ, x, z, ends) {
+    if (prevX === null || ends.length === 1) return ends[0];
+    const incoming = edgeDir(x - prevX, z - prevZ);
+    let best = ends[0];
+    let bestTurn = 4;
+    for (const end of ends) {
+      const turn = (edgeDir(end.x - x, end.z - z) - incoming + 4) % 4;
+      if (turn < bestTurn) {
+        best = end;
+        bestTurn = turn;
+      }
+    }
+    return best;
+  }
+
+  /** Drop corners that do not turn, so a straight run is one side. */
+  function simplifyLoop(loop) {
+    const kept = [];
+    for (let i = 0; i < loop.length; i += 1) {
+      const prev = loop[(i + loop.length - 1) % loop.length];
+      const cur = loop[i];
+      const next = loop[(i + 1) % loop.length];
+      const turn = (cur.x - prev.x) * (next.z - cur.z) - (cur.z - prev.z) * (next.x - cur.x);
+      if (turn) kept.push(cur);
+    }
+    return kept;
+  }
+
+  /** Walk one closed outline from a corner that still has a side. */
+  function traceLoop(edges, x, z) {
+    const loop = [];
+    let prevX = null;
+    let prevZ = null;
+    const startX = x;
+    const startZ = z;
+    for (;;) {
+      const ends = edges.get(`${x},${z}`);
+      if (!ends || !ends.length) return [];
+      const next = chooseNext(prevX, prevZ, x, z, ends);
+      const index = ends.findIndex((end) => end.x === next.x && end.z === next.z);
+      if (index < 0) return [];
+      ends.splice(index, 1);
+      loop.push({ x, z });
+      if (next.x === startX && next.z === startZ) return simplifyLoop(loop);
+      prevX = x;
+      prevZ = z;
+      x = next.x;
+      z = next.z;
+    }
+  }
+
+  /** The closed outlines in a set of directed sides. */
+  function traceLoops(edges) {
+    const loops = [];
+    for (const key of edges.keys()) {
+      while ((edges.get(key) || []).length) {
+        const [x, z] = key.split(",").map(Number);
+        const loop = traceLoop(edges, x, z);
+        if (loop.length) loops.push(loop);
+      }
+    }
+    return loops;
+  }
+
+  /** The outer sides of these chunks, as closed outlines. A shared side is left out. */
+  function pollutionEdges(chunks) {
+    const present = new Set(chunks.map((chunk) => `${chunk.cx},${chunk.cz}`));
+    const edges = new Map();
+    for (const chunk of chunks) {
+      const x0 = chunk.cx * CHUNK;
+      const z0 = chunk.cz * CHUNK;
+      const x1 = x0 + CHUNK;
+      const z1 = z0 + CHUNK;
+      if (!present.has(`${chunk.cx},${chunk.cz - 1}`)) pushEdge(edges, x0, z0, x1, z0);
+      if (!present.has(`${chunk.cx + 1},${chunk.cz}`)) pushEdge(edges, x1, z0, x1, z1);
+      if (!present.has(`${chunk.cx},${chunk.cz + 1}`)) pushEdge(edges, x1, z1, x0, z1);
+      if (!present.has(`${chunk.cx - 1},${chunk.cz}`)) pushEdge(edges, x0, z1, x0, z0);
+    }
+    return traceLoops(edges);
+  }
+
+  /** A chunk-line corner in view pixels, centered on the half pixel. */
+  function cornerAt(point, v) {
+    return [View.blockX(point.x, v) + 0.5, View.blockY(point.z, v) + 0.5];
+  }
+
+  /** Stroke one closed outline on the chunk lines. */
+  function strokeLoop(g, v, loop) {
+    const [x, y] = cornerAt(loop[0], v);
+    g.moveTo(x, y);
+    for (let i = 1; i < loop.length; i += 1) {
+      const [px, py] = cornerAt(loop[i], v);
+      g.lineTo(px, py);
+    }
+    g.closePath();
+  }
+
+  /** Stroke the one selected polluter's settled outer chunk line. No fill, dash, or inset. */
+  function paintPollution(g, v) {
+    if (!state.showPollution || state.drag || Overlay.placement()) return;
+    const source = Core.selectedSource(CATALOG, Sel.selected());
+    if (!source) return;
+    const loops = pollutionEdges(Core.cachedPollutionChunks([source]));
+    if (!loops.length) return;
+    g.save();
+    g.strokeStyle = HOME_CHUNK;
+    g.lineWidth = 2;
+    g.setLineDash([]);
+    g.lineJoin = "miter";
+    g.lineCap = "butt";
+    g.beginPath();
+    for (const loop of loops) strokeLoop(g, v, loop);
+    g.stroke();
+    g.restore();
+  }
+
+  /** Paint the canvas now: the plate, the pollution border, then the hover, the selection, and the preview. */
   function paintFrame() {
     if (paintQueued) {
       cancelAnimationFrame(paintQueued);
@@ -366,6 +471,7 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(plate, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paintPollution(ctx, v);
     Overlay.paint(ctx, v);
   }
 
@@ -401,7 +507,9 @@
     out.width = width;
     out.height = height;
     const g = out.getContext("2d");
-    paint(g, { scale, ox: left, oy: top, width, height });
+    const view = { scale, ox: left, oy: top, width, height };
+    paint(g, view);
+    paintPollution(g, view);
     paintExportTitle(g);
     out.toBlob((blob) => {
       Files.download(`${state.layer}.png`, blob);

@@ -1,0 +1,299 @@
+[
+  {
+    "key": "cal",
+    "name": "Circuit Assembly Line",
+    "short": "CAL",
+    "tier": "LuV",
+    "size": [
+      3,
+      2,
+      3
+    ],
+    "span": [
+      3,
+      3,
+      2,
+      7,
+      3,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Circuit_Assembly_Line",
+    "note": "Length runs from 2 to 7 slices."
+  },
+  {
+    "key": "clarifier",
+    "name": "Clarifier Purification Unit",
+    "short": "CLAR",
+    "tier": "LuV",
+    "size": [
+      11,
+      11,
+      4
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Clarifier_Purification_Unit"
+  },
+  {
+    "key": "cfr",
+    "name": "Compact Fusion Reactor",
+    "short": "CFR",
+    "tier": "LuV",
+    "size": [
+      47,
+      47,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Compact_Fusion_Reactor"
+  },
+  {
+    "key": "equarry",
+    "name": "Ender Quarry",
+    "short": "EQ",
+    "tier": "LuV",
+    "size": [
+      1,
+      1,
+      1
+    ],
+    "span": [
+      1,
+      3,
+      1,
+      3
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Ender_Quarry",
+    "note": "The 1-3 size is the controller plus upgrades. The fenced mine is separate."
+  },
+  {
+    "key": "ehe",
+    "name": "Extreme Heat Exchanger",
+    "short": "EHE",
+    "tier": "LuV",
+    "size": [
+      11,
+      5,
+      6
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Extreme_Heat_Exchanger"
+  },
+  {
+    "key": "flot",
+    "name": "Flotation Cell Regulator",
+    "short": "FLOT",
+    "tier": "LuV",
+    "size": [
+      11,
+      11,
+      5
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Flotation_Cell_Regulator"
+  },
+  {
+    "key": "fusion",
+    "name": "Fusion Reactor",
+    "short": "FUSION",
+    "tier": "LuV",
+    "size": [
+      15,
+      15,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Fusion_Reactor"
+  },
+  {
+    "key": "iarc",
+    "name": "Industrial Arc Furnace",
+    "short": "IARC",
+    "tier": "LuV",
+    "size": [
+      19,
+      17,
+      11
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Arc_Furnace"
+  },
+  {
+    "key": "iaclave",
+    "name": "Industrial Autoclave",
+    "short": "IACLV",
+    "tier": "LuV",
+    "size": [
+      9,
+      7,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Autoclave"
+  },
+  {
+    "key": "isamill",
+    "name": "IsaMill Grinding Machine",
+    "short": "ISAM",
+    "tier": "LuV",
+    "size": [
+      7,
+      3,
+      3
+    ],
+    "pollution": 1280,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/IsaMill_Grinding_Machine"
+  },
+  {
+    "key": "lpt",
+    "name": "Large Plasma Turbine",
+    "short": "LPT",
+    "tier": "LuV",
+    "size": [
+      6,
+      3,
+      3
+    ],
+    "front_air": [
+      3,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Plasma_Turbine"
+  },
+  {
+    "key": "mcr",
+    "name": "Mega Chemical Reactor",
+    "short": "MCR",
+    "tier": "LuV",
+    "size": [
+      9,
+      5,
+      5
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Mega_Chemical_Reactor"
+  },
+  {
+    "key": "mcrack",
+    "name": "Mega Oil Cracker",
+    "short": "MCRACK",
+    "tier": "LuV",
+    "size": [
+      9,
+      13,
+      8
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Mega_Oil_Cracker"
+  },
+  {
+    "key": "mtrans",
+    "name": "Molecular Transformer",
+    "short": "MTRANS",
+    "tier": "LuV",
+    "size": [
+      7,
+      7,
+      9
+    ],
+    "pollution": 1000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Molecular_Transformer"
+  },
+  {
+    "key": "ozone",
+    "name": "Ozonation Purification Unit",
+    "short": "OZONE",
+    "tier": "LuV",
+    "size": [
+      5,
+      9,
+      10
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Ozonation_Purification_Unit"
+  },
+  {
+    "key": "pgs",
+    "name": "Planetary Gas Siphon",
+    "short": "PGS",
+    "tier": "LuV",
+    "size": [
+      13,
+      13,
+      23
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Planetary_Gas_Siphon"
+  },
+  {
+    "key": "sparge",
+    "name": "Sparge Tower",
+    "short": "SPARGE",
+    "tier": "LuV",
+    "size": [
+      3,
+      3,
+      8
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Sparge_Tower"
+  },
+  {
+    "key": "utupu",
+    "name": "Utupu-Tanuri",
+    "short": "UTUPU",
+    "tier": "LuV",
+    "size": [
+      3,
+      3,
+      5
+    ],
+    "pollution": 500,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Utupu-Tanuri"
+  },
+  {
+    "key": "wpp",
+    "name": "Water Purification Plant",
+    "short": "WPP",
+    "tier": "LuV",
+    "size": [
+      8,
+      7,
+      9
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Water_Purification_Plant"
+  },
+  {
+    "key": "wwxl",
+    "name": "Whakawhiti Wera XL",
+    "short": "WWXL",
+    "tier": "LuV",
+    "size": [
+      5,
+      5,
+      9
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Whakawhiti_Wera_XL"
+  },
+  {
+    "key": "xlgt",
+    "name": "XL Turbo Gas Turbine",
+    "short": "XLGT",
+    "tier": "LuV",
+    "size": [
+      26,
+      9,
+      9
+    ],
+    "pollution": 4000,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/XL_Turbo_Gas_Turbine"
+  }
+]

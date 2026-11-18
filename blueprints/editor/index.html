@@ -73,8 +73,26 @@
   </div>
     <section id="picker" class="plan-only" hidden>
       <h2 id="picker-title">Place</h2>
-      <input id="picker-search" type="search" placeholder="Search" autocomplete="off">
-      <div id="picker-jump" role="group" hidden></div>
+      <div id="picker-row">
+        <input id="picker-search" type="search" placeholder="Search" autocomplete="off">
+        <div id="picker-sort-wrap">
+          <button id="picker-sort" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="picker-sort-menu" aria-label="Sort, A to Z">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 16V4"/>
+              <path d="M4 7l3-3 3 3"/>
+              <path d="M17 8v12"/>
+              <path d="M14 17l3 3 3-3"/>
+            </svg>
+            <span id="picker-sort-label">A to Z</span>
+          </button>
+          <div id="picker-sort-menu" role="menu" aria-labelledby="picker-sort" hidden>
+            <button type="button" role="menuitemradio" data-mode="az" aria-checked="true">A to Z</button>
+            <button type="button" role="menuitemradio" data-mode="za" aria-checked="false">Z to A</button>
+            <button type="button" role="menuitemradio" data-mode="tier" aria-checked="false">By tier</button>
+            <button type="button" role="menuitemradio" data-mode="size" aria-checked="false">By size</button>
+          </div>
+        </div>
+      </div>
       <div id="picker-frame">
         <ul id="picker-list" class="list picker"></ul>
       </div>
@@ -151,6 +169,14 @@
         <div class="sheet-row">
           <span>Autosave</span>
           <input id="autosave" type="checkbox" checked aria-label="Autosave">
+        </div>
+        <div class="sheet-row">
+          <span>Chunk borders</span>
+          <input id="chunk-borders" type="checkbox" checked aria-label="Chunk borders">
+        </div>
+        <div class="sheet-row">
+          <span>Pollution</span>
+          <input id="pollution" type="checkbox" checked aria-label="Pollution">
         </div>
       </section>
       <section class="sheet-section" data-section="library">

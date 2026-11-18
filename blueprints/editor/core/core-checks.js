@@ -466,6 +466,11 @@
     survey.note(text, "rooms", room ? room.index : null, room ? room.r.floor : null);
   }
 
+  /** Whether a multiblock counts for the dirty-chunk walk. */
+  function countsForDirty(spec) {
+    return Boolean(spec && (spec.sky || spec.pollution));
+  }
+
   /** Every polluting multiblock and machine stands in a dirty chunk. A row is reported once. */
   function checkPollution(survey) {
     const { layout, catalog } = survey;
@@ -473,7 +478,7 @@
     const clean = (x, z) => !dirty.has(chunkName(layout, x, z));
     layout.pads.forEach((p) => {
       const spec = catalog.multis[p.key];
-      if (!spec || !spec.pollution) return;
+      if (!countsForDirty(spec)) return;
       const outside = [[p.x0, p.z0], [p.x1, p.z0], [p.x0, p.z1], [p.x1, p.z1]].find(([x, z]) => clean(x, z));
       if (outside) {
         notePollution(survey, `${spec.name} pollutes outside the dirty chunks, at ${chunkName(layout, ...outside)}`, p.room);
@@ -534,5 +539,63 @@
     return survey.out;
   }
 
-  Object.assign(Core, { overTier, walkCells, check });
+  // ---- pollution sources ----
+
+  /** The home chunks of a footprint, as [cx, cz] in that same order. */
+  function chunkCells(box) {
+    return Core.homeChunks(box).map((chunk) => [chunk.x0 >> 4, chunk.z0 >> 4]);
+  }
+
+  /** The one-cell box a machine stands on. */
+  function machineBox(slot) {
+    return { x0: slot.x, x1: slot.x, z0: slot.z, z1: slot.z };
+  }
+
+  /** A polluting catalog row and its footprint, or null when it adds nothing. */
+  function sourceOf(spec, box) {
+    const pollution = spec && spec.pollution;
+    const rated = typeof pollution === "number" && pollution > 0;
+    if (!rated && pollution !== true) return null;
+    const cells = chunkCells(box);
+    if (!cells.length) return null;
+    return { cells, pollution };
+  }
+
+  /** The pollution source for the one selected pad or machine, or null when it adds nothing. */
+  function selectedSource(catalog, item) {
+    if (!catalog || !item) return null;
+    if (item.kind === "pads" && item.rec) return sourceOf(catalog.multis[item.rec.key], item.rec);
+    if (item.kind === "machines") return sourceOf(catalog.singles[item.code], machineBox(item));
+    return null;
+  }
+
+  /** Append a source when that catalog row pollutes. */
+  function pushSource(sources, spec, box) {
+    const source = sourceOf(spec, box);
+    if (source) sources.push(source);
+  }
+
+  /** The placement preview as a source, or null when it is not a polluting placement. */
+  function previewSource(catalog, preview) {
+    if (!preview || !catalog) return null;
+    if (preview.kind === "pads") return sourceOf(catalog.multis[preview.key], preview.box);
+    if (preview.kind === "machines") return sourceOf(catalog.singles[preview.code], preview.box);
+    return null;
+  }
+
+  /** The polluting pads and machines on every floor, plus a polluting placement preview. */
+  function pollutionSources(layout, catalog, preview) {
+    const sources = [];
+    if (layout && catalog) {
+      for (const pad of layout.pads) pushSource(sources, catalog.multis[pad.key], pad);
+      for (const wall of layout.walls) {
+        for (const slot of wallSlots(wall)) pushSource(sources, catalog.singles[slot.code], machineBox(slot));
+      }
+    }
+    const extra = previewSource(catalog, preview);
+    if (extra) sources.push(extra);
+    return sources;
+  }
+
+  Object.assign(Core, { overTier, walkCells, check, pollutionSources, selectedSource });
 })(typeof window !== "undefined" ? window : globalThis);

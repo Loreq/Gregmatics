@@ -465,8 +465,9 @@ def _polluters(machines: list) -> list[tuple]:
     """(name, x, z) for every cell that makes pollution: multiblocks first, then machines."""
     found = []
     for pad in L.PADS:
-        if MULTIS[pad.key].pollution:
-            found += [(f"pad {pad.num} {MULTIS[pad.key].name}", x, z) for x, z in pad.cells()]
+        spec = MULTIS[pad.key]
+        if spec.pollution or spec.sky:
+            found += [(f"pad {pad.num} {spec.name}", x, z) for x, z in pad.cells()]
     found += [(f"{m.code} in wall {m.wall}", m.x, m.z) for m in machines if SINGLES[m.code].pollution]
     return found
 

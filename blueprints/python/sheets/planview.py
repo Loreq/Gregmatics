@@ -446,8 +446,9 @@ class Plan:
         spec = MULTIS[pad.key]
         if detail and spec.front_air[0] > 1:
             self._keep_clear(pad)
-        outline = PALETTE["rust"] if spec.pollution else PALETTE["wall"]
-        width = 2 if (spec.pollution or detail) else 1
+        pollutes = spec.pollution or spec.sky
+        outline = PALETTE["rust"] if pollutes else PALETTE["wall"]
+        width = 2 if (pollutes or detail) else 1
         if spec.shell:
             self._shell(pad, outline, width)
         else:

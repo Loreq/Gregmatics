@@ -1,0 +1,67 @@
+[
+  {
+    "key": "defc",
+    "name": "Draconic Evolution Fusion Crafter",
+    "short": "DEFC",
+    "tier": "UHV",
+    "size": [
+      5,
+      5,
+      10
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Draconic_Evolution_Fusion_Crafter"
+  },
+  {
+    "key": "eic",
+    "name": "Electric Implosion Compressor",
+    "short": "EIC",
+    "tier": "UHV",
+    "size": [
+      7,
+      15,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Electric_Implosion_Compressor"
+  },
+  {
+    "key": "iof",
+    "name": "Integrated Ore Factory",
+    "short": "IOF",
+    "tier": "UHV",
+    "size": [
+      13,
+      15,
+      9
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Integrated_Ore_Factory"
+  },
+  {
+    "key": "mwg",
+    "name": "Miniature Wormhole Generator",
+    "short": "MWG",
+    "tier": "UHV",
+    "size": [
+      7,
+      7,
+      7
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Miniature_Wormhole_Generator"
+  },
+  {
+    "key": "nfr",
+    "name": "Naquadah Fuel Refinery",
+    "short": "NFR",
+    "tier": "UHV",
+    "size": [
+      5,
+      27,
+      27
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Naquadah_Fuel_Refinery"
+  }
+]

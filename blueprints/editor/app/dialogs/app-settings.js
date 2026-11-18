@@ -4,8 +4,8 @@
   "use strict";
 
   const {
-    Core, CATALOG, AUTOSAVE_KEY, CHECK_UPDATES_KEY, $, state, L, unsaved, status,
-    History, Files, Save, Bounds, Dialogs, Panels,
+    Core, CATALOG, AUTOSAVE_KEY, SHOW_CHUNK_GRID_KEY, SHOW_POLLUTION_KEY, CHECK_UPDATES_KEY, $, state, L, unsaved, status,
+    History, Files, Save, Bounds, Dialogs, Panels, Paint,
   } = App;
 
   // The picture the main floor's footprint is typed into, while the dialog is open.
@@ -87,6 +87,33 @@
     return (reply && reply.error) || "Could not store that setting.";
   }
 
+  // ---- the chunk grid and the pollution border ----
+
+  /** Remember the chunk-grid switch in the browser. */
+  function storeChunkGrid() {
+    localStorage.setItem(SHOW_CHUNK_GRID_KEY, state.showChunkGrid ? "on" : "off");
+  }
+
+  /** Turn the chunk grid on or off and repaint the plate. Nothing is written to the plan. */
+  function applyChunkGrid(on) {
+    state.showChunkGrid = on;
+    storeChunkGrid();
+    Paint.notePlan();
+    Paint.draw();
+  }
+
+  /** Remember the pollution-border switch in the browser. */
+  function storePollution() {
+    localStorage.setItem(SHOW_POLLUTION_KEY, state.showPollution ? "on" : "off");
+  }
+
+  /** Turn the pollution border on or off. Nothing is written to the plan. */
+  function applyPollution(on) {
+    state.showPollution = on;
+    storePollution();
+    Paint.draw();
+  }
+
   // ---- the launch check ----
 
   /** Remember the launch-check switch in the browser. */
@@ -140,6 +167,8 @@
     Files.refreshFolder();
     mountBounds();
     $("autosave").checked = state.autosave;
+    $("chunk-borders").checked = state.showChunkGrid;
+    $("pollution").checked = state.showPollution;
     $("check-on-launch").checked = state.checkUpdates;
     await Files.refreshPlanFiles();
     syncPlanName();
@@ -152,6 +181,8 @@
     if ($("plan-name").value.trim() !== planName()) return true;
     if ($("tier").value !== Core.planTier(L())) return true;
     if ($("autosave").checked !== state.autosave) return true;
+    if ($("chunk-borders").checked !== state.showChunkGrid) return true;
+    if ($("pollution").checked !== state.showPollution) return true;
     if ($("check-on-launch").checked !== state.checkUpdates) return true;
     const floor = Core.mainFloor(L());
     if (!floor || !boundsEditor) return false;
@@ -212,6 +243,8 @@
       const failed = await applyAutosave($("autosave").checked);
       if (failed) return refuse(failed);
     }
+    if ($("chunk-borders").checked !== state.showChunkGrid) applyChunkGrid($("chunk-borders").checked);
+    if ($("pollution").checked !== state.showPollution) applyPollution($("pollution").checked);
     if ($("check-on-launch").checked !== state.checkUpdates) {
       const failed = await applyCheckUpdates($("check-on-launch").checked);
       if (failed) return refuse(failed);

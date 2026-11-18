@@ -27,9 +27,12 @@
     return out;
   }
 
-  /** Every multiblock by name, with its size. */
+  /** Multiblocks the plan tier allows, by name with its size. */
   function padOptions() {
-    return Object.entries(CATALOG.multis).sort((a, b) => a[1].name.localeCompare(b[1].name))
+    const cap = Core.planTier(L());
+    return Object.entries(CATALOG.multis)
+      .filter(([, spec]) => Core.multiOpen(spec, cap))
+      .sort((a, b) => a[1].name.localeCompare(b[1].name))
       .map(([key, spec]) => [key, `${spec.name} (${Picker.sizeLabel(spec)})`]);
   }
 
@@ -87,6 +90,26 @@
 
   // ---- a machine ----
 
+  /** A whole number with a comma between thousands. */
+  function commaDigits(n) {
+    return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  /** The pollution fact for one catalog row, or "" when it does not pollute. */
+  function pollutionLine(pollution) {
+    if (typeof pollution === "number" && pollution > 0) return `${commaDigits(pollution)} gibbl/s`;
+    if (pollution === true) return "Pollution";
+    return "";
+  }
+
+  /** The first line under the title when this selection pollutes. */
+  function pollutionNote(F, item) {
+    if (Sel.selection().length !== 1 || !item) return;
+    const spec = item.kind === "machines" ? CATALOG.singles[item.code] : CATALOG.multis[item.rec.key];
+    const line = pollutionLine(spec && spec.pollution);
+    if (line) F.note(line);
+  }
+
   /** The fields of one machine: what it is, the way it faces, its tier, and its cell. */
   function machineFields(F, item) {
     const { rec } = item;
@@ -117,7 +140,7 @@
 
   // ---- zones ----
 
-  /** A room: its name and code, its lock, its color, its floor, a height of its own, and whether it must stay clean. */
+  /** A room: its name and code, its lock, its color, its floor, a height of its own, and its clean flag. */
   function roomFields(F, rec) {
     F.text("Name", rec.name, (value) => History.change(() => { rec.name = value.trim() || rec.name; }), { first: true });
     flagField(F, rec, "Lock", "locked");
@@ -129,7 +152,7 @@
       if (!value || value === usual) delete rec.height;
       else rec.height = Math.max(MIN_ROOM_HEIGHT, value);
     }), { placeholder: `${usual} (floor)`, min: MIN_ROOM_HEIGHT });
-    flagField(F, rec, "Clean", "clean", "This room needs to stay free of pollution.");
+    flagField(F, rec, "Clean", "clean", "Keeps this room two chunk steps from the dirty chunks. It does not block pollution, and it does not power a cleanroom.");
   }
 
   /** Give a street a label in capitals at its first block, or take its label away. */
@@ -267,10 +290,24 @@
     if (spec.note) F.note(spec.note);
   }
 
+  /** The placed name when the plan tier closes it, then a blank chooser of multiblocks the plan allows. */
+  function aboveTierPad(F, rec, spec) {
+    F.row("Multiblock", make("span", "", spec.name));
+    const options = [["", ""], ...padOptions()];
+    F.choose("Multiblock", "", options, (value) => {
+      if (!CATALOG.multis[value]) return;
+      History.change(() => Core.retypePad(rec, CATALOG, value));
+    });
+  }
+
   /** A multiblock: what it is, where its controller is, its modules and sizes, and its label. */
   function padFields(F, rec, box) {
     const spec = CATALOG.multis[rec.key] || { name: rec.key, size: [0, 0, 0] };
-    F.choose("Multiblock", rec.key, padOptions(), (value) => History.change(() => Core.retypePad(rec, CATALOG, value)));
+    if (Core.multiOpen(spec, Core.planTier(L()))) {
+      F.choose("Multiblock", rec.key, padOptions(), (value) => History.change(() => Core.retypePad(rec, CATALOG, value)));
+    } else {
+      aboveTierPad(F, rec, spec);
+    }
     const facing = F.sides("Controller", rec.front, (value) => History.change(() => Core.setPadFront(rec, value)));
     const turn = button("Turn", () => Edit.turnSelected(), "aside");
     turn.title = "Turn it a quarter clockwise (R)";
@@ -394,6 +431,7 @@
   function oneFields(F, item) {
     const { kind, rec } = item;
     const box = Sel.boxOf(item);
+    if (kind === "machines" || kind === "pads") pollutionNote(F, item);
     if (kind === "machines") {
       machineFields(F, item);
       return;

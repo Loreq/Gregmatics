@@ -37,13 +37,14 @@
     return null;
   }
 
-  /** The picked multiblock centered on a cell. It fits when all of it is in one room. */
+  /** The picked multiblock centered on a cell. It fits when the plan tier allows it and all of it is in one room. */
   function padPlacement(cell, home) {
     const key = state.pick.pads;
     const [a, b] = Core.padSize(CATALOG, key);
     const [w, d] = state.swap ? [b, a] : [a, b];
     const box = around(cell, w, d);
-    const fits = Boolean(home) && insideBox(home.room, box);
+    const tierOpen = Core.multiOpen(CATALOG.multis[key], Core.planTier(L()));
+    const fits = tierOpen && Boolean(home) && insideBox(home.room, box);
     const front = state.front || (home ? Core.facingAway(home.room, box) : DEFAULT_FRONT);
     return { kind: "pads", key, box, w, d, front, home, fits };
   }

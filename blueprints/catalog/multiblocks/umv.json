@@ -1,0 +1,15 @@
+[
+  {
+    "key": "eoh",
+    "name": "Eye of Harmony",
+    "short": "EOH",
+    "tier": "UMV",
+    "size": [
+      33,
+      33,
+      33
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Eye_of_Harmony"
+  }
+]

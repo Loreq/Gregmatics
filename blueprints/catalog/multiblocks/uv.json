@@ -1,0 +1,258 @@
+[
+  {
+    "key": "beamc",
+    "name": "Beam Crafter",
+    "short": "BCRAF",
+    "tier": "UV",
+    "size": [
+      11,
+      17,
+      5
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Beam_Crafter"
+  },
+  {
+    "key": "beamm",
+    "name": "Beam Mirror",
+    "short": "BMIR",
+    "tier": "UV",
+    "size": [
+      5,
+      3,
+      5
+    ],
+    "fits": [
+      [
+        5,
+        3,
+        5
+      ],
+      [
+        5,
+        3,
+        6
+      ]
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Beam_Mirror",
+    "note": "90 degree bend is 5x3x5. 180 degree bend is 5x3x6."
+  },
+  {
+    "key": "beams",
+    "name": "Beam Splitter",
+    "short": "BSPLIT",
+    "tier": "UV",
+    "size": [
+      9,
+      9,
+      3
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Beam_Splitter"
+  },
+  {
+    "key": "beamst",
+    "name": "Beam Stabilizer",
+    "short": "BSTAB",
+    "tier": "UV",
+    "size": [
+      11,
+      7,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Beam_Stabilizer"
+  },
+  {
+    "key": "compal",
+    "name": "Component Assembly Line",
+    "short": "COMPAL",
+    "tier": "UV",
+    "size": [
+      33,
+      9,
+      10
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Component_Assembly_Line"
+  },
+  {
+    "key": "etfpu",
+    "name": "Extreme Temperature Fluctuation Purification Unit",
+    "short": "ETFPU",
+    "tier": "UV",
+    "size": [
+      15,
+      23,
+      15
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Extreme_Temperature_Fluctuation_Purification_Unit"
+  },
+  {
+    "key": "helpu",
+    "name": "High Energy Laser Purification Unit",
+    "short": "HELPU",
+    "tier": "UV",
+    "size": [
+      9,
+      13,
+      9
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/High_Energy_Laser_Purification_Unit"
+  },
+  {
+    "key": "apiary",
+    "name": "Industrial Apicultural Acclimatiser and Drone Domestication Station",
+    "short": "APIARY",
+    "tier": "UV",
+    "size": [
+      15,
+      15,
+      17
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Industrial_Apicultural_Acclimatiser_and_Drone_Domestication_Station"
+  },
+  {
+    "key": "lhc",
+    "name": "Large Hadron Collider",
+    "short": "LHC",
+    "tier": "UV",
+    "size": [
+      122,
+      109,
+      13
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Large_Hadron_Collider"
+  },
+  {
+    "key": "mfcpu",
+    "name": "Matter Fabrication CPU",
+    "short": "MFCPU",
+    "tier": "UV",
+    "size": [
+      5,
+      5,
+      4
+    ],
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Matter_Fabrication_CPU"
+  },
+  {
+    "key": "mmqu",
+    "name": "Matter Manipulator Quantum Uplink",
+    "short": "MMQU",
+    "tier": "UV",
+    "size": [
+      9,
+      9,
+      9
+    ],
+    "gt": false,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Matter_Manipulator_Quantum_Uplink"
+  },
+  {
+    "key": "mabs",
+    "name": "Mega Alloy Blast Smelter",
+    "short": "MABS",
+    "tier": "UV",
+    "size": [
+      11,
+      11,
+      20
+    ],
+    "pollution": 102400,
+    "muffler": true,
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Mega_Alloy_Blast_Smelter"
+  },
+  {
+    "key": "nanoforge",
+    "name": "Nano Forge",
+    "short": "NFORGE",
+    "tier": "UV",
+    "size": [
+      41,
+      41,
+      52
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Nano_Forge"
+  },
+  {
+    "key": "qos",
+    "name": "Network Switch with QoS",
+    "short": "QOS",
+    "tier": "UV",
+    "size": [
+      3,
+      3,
+      3
+    ],
+    "source": "https://wiki.gtnewhorizons.com/wiki/Network_Switch_With_QoS"
+  },
+  {
+    "key": "ncomp",
+    "name": "Neutronium Compressor",
+    "short": "NCOMP",
+    "tier": "UV",
+    "size": [
+      11,
+      11,
+      11
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Neutronium_Compressor"
+  },
+  {
+    "key": "pcb",
+    "name": "PCB Factory",
+    "short": "PCB",
+    "tier": "UV",
+    "size": [
+      7,
+      7,
+      6
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/PCB_Factory"
+  },
+  {
+    "key": "qc",
+    "name": "Quantum Computer",
+    "short": "QC",
+    "tier": "UV",
+    "size": [
+      5,
+      2,
+      4
+    ],
+    "span": [
+      5,
+      16,
+      2,
+      2,
+      4,
+      4
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Quantum_Computer",
+    "note": "Mandatory air in front of each computer heat vent."
+  },
+  {
+    "key": "rstation",
+    "name": "Research Station",
+    "short": "RSTN",
+    "tier": "UV",
+    "size": [
+      7,
+      3,
+      7
+    ],
+    "share": true,
+    "source": "https://wiki.gtnewhorizons.com/wiki/Research_Station"
+  }
+]

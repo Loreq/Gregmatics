@@ -248,7 +248,7 @@ def _pad_line(group: list) -> str:
     w, d = lead.size
     count = cluster_count(group)
     extra = f" · {lead.label}" if lead.label and count == 1 else ""
-    smoke = " · pollutes" if spec.pollution else ""
+    smoke = " · pollutes" if spec.pollution or spec.sky else ""
     return counted(count, spec.name) + f" {w}×{d}×{M.pad_height(lead)}{extra}{smoke}"
 
 

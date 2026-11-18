@@ -120,7 +120,7 @@
     ],
     "shell": true,
     "source": "https://wiki.gtnewhorizons.com/wiki/Cleanroom",
-    "note": "Any length and width from 3 to 15, and any height from 4 to 15. The 9×9×5 placed by default uses 48 filter casings."
+    "note": "Any length and width from 3 to 15, and any height from 4 to 15. The 9×9×5 placed by default uses 48 filter casings. The controller must be powered. Efficiency climbs only while the cleanroom is active and drops back to 0% when the controller is inactive. Chunk pollution does not spoil it. A polluting machine run inside shuts it down."
   },
   {
     "key": "latex",
@@ -181,7 +181,7 @@
       3,
       1
     ],
-    "pollution": 10000,
+    "pollution": 0,
     "gt": false,
     "sky": true,
     "source": "https://wiki.gtnewhorizons.com/wiki/Rockets",

@@ -311,6 +311,8 @@
     canvas.style.cursor = tool.draw || tool.place ? "crosshair" : "";
     const end = drag && ENDS[drag.mode];
     if (end) end(drag);
+    // The press painted while a drag was set. Paint again with it cleared. A pan has no release handler.
+    redraw();
   }
 
   // ---- the rest ----
